@@ -407,7 +407,7 @@ struct ieee80211_mgd_auth_data {
 struct ieee80211_mgd_assoc_data {
 	struct cfg80211_bss *bss;
 	const u8 *supp_rates;
-	const u8 *ht_information_ie;
+	const u8 *ht_operation_ie;
 
 	unsigned long timeout;
 	int tries;
@@ -1152,7 +1152,7 @@ struct ieee802_11_elems {
 	const u8 *wmm_info;
 	const u8 *wmm_param;
 	const struct ieee80211_ht_cap *ht_cap_elem;
-	const struct ieee80211_ht_info *ht_info_elem;
+	const struct ieee80211_ht_operation *ht_info_elem;
 	const struct ieee80211_meshconf_ie *mesh_config;
 	const u8 *mesh_id;
 	const u8 *peering;

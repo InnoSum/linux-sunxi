@@ -177,7 +177,7 @@ static int ecw2cw(int ecw)
  * HT abilities for a specific band.
  */
 static u32 ieee80211_enable_ht(struct ieee80211_sub_if_data *sdata,
-			       struct ieee80211_ht_info *hti,
+			       struct ieee80211_ht_operation *hti,
 			       const u8 *bssid, u16 ap_ht_cap_flags,
 			       bool beacon_htcap_ie)
 {
@@ -185,7 +185,7 @@ static u32 ieee80211_enable_ht(struct ieee80211_sub_if_data *sdata,
 	struct ieee80211_supported_band *sband;
 	struct sta_info *sta;
 	u32 changed = 0;
-	int hti_cfreq;
+	int ht_cfreq;
 	u16 ht_opmode;
 	bool enable_ht = true, queues_stopped = false;
 	enum nl80211_channel_type prev_chantype;
@@ -196,10 +196,10 @@ static u32 ieee80211_enable_ht(struct ieee80211_sub_if_data *sdata,
 	prev_chantype = sdata->vif.bss_conf.channel_type;
 
 
-	hti_cfreq = ieee80211_channel_to_frequency(hti->control_chan,
+	ht_cfreq = ieee80211_channel_to_frequency(hti->control_chan,
 						   sband->band);
 	/* check that channel matches the right operating channel */
-	if (local->hw.conf.channel->center_freq != hti_cfreq) {
+	if (local->hw.conf.channel->center_freq != ht_cfreq) {
 		/* Some APs mess this up, evidently.
 		 * Netgear WNDR3700 sometimes reports 4 higher than
 		 * the actual channel, for instance.
@@ -211,7 +211,7 @@ static u32 ieee80211_enable_ht(struct ieee80211_sub_if_data *sdata,
 		       " band: %d.  Disabling HT.\n",
 		       sdata->name,
 		       local->hw.conf.channel->center_freq,
-		       hti_cfreq, hti->control_chan,
+		       ht_cfreq, hti->control_chan,
 		       sband->band);
 		enable_ht = false;
 	}
@@ -222,8 +222,10 @@ static u32 ieee80211_enable_ht(struct ieee80211_sub_if_data *sdata,
 		if (!(ap_ht_cap_flags & IEEE80211_HT_CAP_40MHZ_INTOLERANT) &&
 		    !ieee80111_cfg_override_disables_ht40(sdata) &&
 		    (sband->ht_cap.cap & IEEE80211_HT_CAP_SUP_WIDTH_20_40) &&
-		    (hti->ht_param & IEEE80211_HT_PARAM_CHAN_WIDTH_ANY)) {
-			switch(hti->ht_param & IEEE80211_HT_PARAM_CHA_SEC_OFFSET) {
+		    (ht_opera->ht_param & IEEE80211_HT_PARAM_CHAN_WIDTH_ANY)) {
+			switch(ht_oper->ht_param & IEEE80211_HT_PARAM_CHA_SEC_OFFSET) {
+			switch (ht_oper->ht_param &
+				IEEE80211_HT_PARAM_CHA_SEC_OFFSET) {
 			case IEEE80211_HT_PARAM_CHA_SEC_ABOVE:
 				rx_channel_type = NL80211_CHAN_HT40PLUS;
 				break;
@@ -279,7 +281,7 @@ static u32 ieee80211_enable_ht(struct ieee80211_sub_if_data *sdata,
 		ieee80211_wake_queues_by_reason(&sdata->local->hw,
 			IEEE80211_QUEUE_STOP_REASON_CHTYPE_CHANGE);
 
-	ht_opmode = le16_to_cpu(hti->operation_mode);
+	ht_opmode = le16_to_cpu(ht_oper->operation_mode);
 
 	/* if bss configuration changed store the new one */
 	if (sdata->ht_opmode_valid != enable_ht ||
@@ -317,12 +319,12 @@ static int ieee80211_compatible_rates(const u8 *supp_rates, int supp_rates_len,
 }
 
 static void ieee80211_add_ht_ie(struct ieee80211_sub_if_data *sdata,
-				struct sk_buff *skb, const u8 *ht_info_ie,
+				struct sk_buff *skb, const u8 *ht_oper_ie,
 				struct ieee80211_supported_band *sband,
 				struct ieee80211_channel *channel,
 				enum ieee80211_smps_mode smps)
 {
-	struct ieee80211_ht_info *ht_info;
+	struct ieee80211_ht_operation *ht_oper;
 	u8 *pos;
 	u32 flags = channel->flags;
 	u16 cap;
@@ -330,21 +332,21 @@ static void ieee80211_add_ht_ie(struct ieee80211_sub_if_data *sdata,
 
 	BUILD_BUG_ON(sizeof(ht_cap) != sizeof(sband->ht_cap));
 
-	if (!ht_info_ie)
+	if (!ht_oper_ie)
 		return;
 
-	if (ht_info_ie[1] < sizeof(struct ieee80211_ht_info))
+	if (ht_oper_ie[1] < sizeof(struct ieee80211_ht_operation))
 		return;
 
 	memcpy(&ht_cap, &sband->ht_cap, sizeof(ht_cap));
 	ieee80211_apply_htcap_overrides(sdata, &ht_cap);
 
-	ht_info = (struct ieee80211_ht_info *)(ht_info_ie + 2);
+	ht_oper = (struct ieee80211_ht_operation *)(ht_oper_ie + 2);
 
 	/* determine capability flags */
 	cap = ht_cap.cap;
 
-	switch (ht_info->ht_param & IEEE80211_HT_PARAM_CHA_SEC_OFFSET) {
+	switch (ht_oper->ht_param & IEEE80211_HT_PARAM_CHA_SEC_OFFSET) {
 	case IEEE80211_HT_PARAM_CHA_SEC_ABOVE:
 		if (flags & IEEE80211_CHAN_NO_HT40PLUS) {
 			cap &= ~IEEE80211_HT_CAP_SUP_WIDTH_20_40;
@@ -2154,9 +2156,9 @@ static bool ieee80211_assoc_success(struct ieee80211_sub_if_data *sdata,
 		ieee80211_set_wmm_default(sdata, false);
 	changed |= BSS_CHANGED_QOS;
 
-	if (elems.ht_info_elem && elems.wmm_param &&
+	if (elems.ht_operation && elems.wmm_param &&
 	    !(ifmgd->flags & IEEE80211_STA_DISABLE_11N))
-		changed |= ieee80211_enable_ht(sdata, elems.ht_info_elem,
+		changed |= ieee80211_enable_ht(sdata, elems.ht_operation,
 					       cbss->bssid, ap_ht_cap_flags,
 					       false);
 
@@ -2379,7 +2381,7 @@ static const u64 care_about_ies =
 	(1ULL << WLAN_EID_CHANNEL_SWITCH) |
 	(1ULL << WLAN_EID_PWR_CONSTRAINT) |
 	(1ULL << WLAN_EID_HT_CAPABILITY) |
-	(1ULL << WLAN_EID_HT_INFORMATION);
+	(1ULL << WLAN_EID_HT_OPERATION);
 
 static void ieee80211_rx_mgmt_beacon(struct ieee80211_sub_if_data *sdata,
 				     struct ieee80211_mgmt *mgmt,
@@ -2564,7 +2566,7 @@ static void ieee80211_rx_mgmt_beacon(struct ieee80211_sub_if_data *sdata,
 			erp_valid, erp_value);
 
 
-	if (elems.ht_cap_elem && elems.ht_info_elem && elems.wmm_param &&
+	if (elems.ht_cap_elem && elems.ht_operation && elems.wmm_param &&
 	    !(ifmgd->flags & IEEE80211_STA_DISABLE_11N)) {
 		struct sta_info *sta;
 		struct ieee80211_supported_band *sband;
@@ -2587,7 +2589,7 @@ static void ieee80211_rx_mgmt_beacon(struct ieee80211_sub_if_data *sdata,
 
 		rcu_read_unlock();
 
-		changed |= ieee80211_enable_ht(sdata, elems.ht_info_elem,
+		changed |= ieee80211_enable_ht(sdata, elems.ht_operation,
 					       bssid, ap_ht_cap_flags, true);
 	}
 
@@ -3399,8 +3401,8 @@ int ieee80211_mgd_assoc(struct ieee80211_sub_if_data *sdata,
 	assoc_data->wmm = bss->wmm_used && (local->hw.queues >= 4);
 	assoc_data->supp_rates = bss->supp_rates;
 	assoc_data->supp_rates_len = bss->supp_rates_len;
-	assoc_data->ht_information_ie =
-		ieee80211_bss_get_ie(req->bss, WLAN_EID_HT_INFORMATION);
+	assoc_data->ht_operation_ie =
+		ieee80211_bss_get_ie(req->bss, WLAN_EID_HT_OPERATION);
 
 	if (bss->wmm_used && bss->uapsd_supported &&
 	    (sdata->local->hw.flags & IEEE80211_HW_SUPPORTS_UAPSD)) {
