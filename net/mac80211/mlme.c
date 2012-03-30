@@ -223,7 +223,7 @@ static u32 ieee80211_config_ht_tx(struct ieee80211_sub_if_data *sdata,
 			sta->sta.ht_cap.cap |= IEEE80211_HT_CAP_SUP_WIDTH_20_40;
 
 		rate_control_rate_update(local, sband, sta,
-					 IEEE80211_RC_HT_CHANGED);
+					 IEEE80211_RC_BW_CHANGED);
 	}
 
 	ht_opmode = le16_to_cpu(ht_oper->operation_mode);
