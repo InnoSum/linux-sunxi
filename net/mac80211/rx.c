@@ -1717,8 +1717,8 @@ static bool ieee80211_frame_allowed(struct ieee80211_rx_data *rx, __le16 fc)
 	 * of whether the frame was encrypted or not.
 	 */
 	if (ehdr->h_proto == rx->sdata->control_port_protocol &&
-	    (compare_ether_addr(ehdr->h_dest, rx->sdata->vif.addr) == 0 ||
-	     compare_ether_addr(ehdr->h_dest, pae_group_addr) == 0))
+	    (ether_addr_equal(ehdr->h_dest, rx->sdata->vif.addr) ||
+	     ether_addr_equal(ehdr->h_dest, pae_group_addr)))
 		return true;
 
 	if (ieee80211_802_1x_port_control(rx) ||
@@ -2820,8 +2820,8 @@ static int prepare_for_handlers(struct ieee80211_rx_data *rx,
 	case NL80211_IFTYPE_ADHOC:
 		if (!bssid)
 			return 0;
-		if (compare_ether_addr(sdata->vif.addr, hdr->addr2) == 0 ||
-		    compare_ether_addr(sdata->u.ibss.bssid, hdr->addr2) == 0)
+		if (ether_addr_equal(sdata->vif.addr, hdr->addr2) ||
+		    ether_addr_equal(sdata->u.ibss.bssid, hdr->addr2))
 			return 0;
 		if (ieee80211_is_beacon(hdr->frame_control)) {
 			return 1;
