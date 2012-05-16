@@ -60,7 +60,7 @@ bool cfg80211_can_beacon_sec_chan(struct wiphy *wiphy,
 		diff = -20;
 		break;
 	default:
-		return false;
+		return true;
 	}
 
 	sec_chan = ieee80211_get_channel(wiphy, chan->center_freq + diff);
