@@ -938,11 +938,6 @@ void ieee80211_recalc_ps(struct ieee80211_local *local, s32 latency)
 		return;
 	}
 
-	if (!list_empty(&local->work_list)) {
-		local->ps_sdata = NULL;
-		goto change;
-	}
-
 	list_for_each_entry(sdata, &local->interfaces, list) {
 		if (!ieee80211_sdata_running(sdata))
 			continue;
@@ -1015,7 +1010,6 @@ void ieee80211_recalc_ps(struct ieee80211_local *local, s32 latency)
 		local->ps_sdata = NULL;
 	}
 
- change:
 	ieee80211_change_ps(local);
 }
 
