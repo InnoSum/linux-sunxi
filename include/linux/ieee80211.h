@@ -1444,7 +1444,7 @@ enum ieee80211_tdls_actioncode {
  *
  * @IEEE80211_SYNC_METHOD_NEIGHBOR_OFFSET: the default synchronization method
  * @IEEE80211_SYNC_METHOD_VENDOR: a vendor specific synchronization method
- * that will be specified in a vendor specific information element
+ *	that will be specified in a vendor specific information element
  */
 enum {
 	IEEE80211_SYNC_METHOD_NEIGHBOR_OFFSET = 1,
@@ -1456,7 +1456,7 @@ enum {
  *
  * @IEEE80211_PATH_PROTOCOL_HWMP: the default path selection protocol
  * @IEEE80211_PATH_PROTOCOL_VENDOR: a vendor specific protocol that will
- * be specified in a vendor specific information element
+ *	be specified in a vendor specific information element
  */
 enum {
 	IEEE80211_PATH_PROTOCOL_HWMP = 0,
@@ -1468,7 +1468,7 @@ enum {
  *
  * @IEEE80211_PATH_METRIC_AIRTIME: the default path selection metric
  * @IEEE80211_PATH_METRIC_VENDOR: a vendor specific metric that will be
- * specified in a vendor specific information element
+ *	specified in a vendor specific information element
  */
 enum {
 	IEEE80211_PATH_METRIC_AIRTIME = 0,
