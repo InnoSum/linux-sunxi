@@ -569,6 +569,26 @@ struct ieee80211s_hdr {
 #define MESH_FLAGS_PS_DEEP	0x4
 
 /**
+ * enum ieee80211_preq_flags - mesh PREQ element flags
+ *
+ * @IEEE80211_PREQ_PROACTIVE_PREP_FLAG: proactive PREP subfield
+ */
+enum ieee80211_preq_flags {
+	IEEE80211_PREQ_PROACTIVE_PREP_FLAG	= 1<<2,
+};
+
+/**
+ * enum ieee80211_preq_target_flags - mesh PREQ element per target flags
+ *
+ * @IEEE80211_PREQ_TO_FLAG: target only subfield
+ * @IEEE80211_PREQ_USN_FLAG: unknown target HWMP sequence number subfield
+ */
+enum ieee80211_preq_target_flags {
+	IEEE80211_PREQ_TO_FLAG	= 1<<0,
+	IEEE80211_PREQ_USN_FLAG	= 1<<2,
+};
+
+/**
  * struct ieee80211_quiet_ie
  *
  * This structure refers to "Quiet information element"
