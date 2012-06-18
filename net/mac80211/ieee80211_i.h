@@ -55,6 +55,7 @@ struct ieee80211_local;
 #define TU_TO_EXP_TIME(x)	(jiffies + usecs_to_jiffies((x) * 1024))
 
 /*
+<<<<<<< HEAD
  * Some APs experience problems when working with U-APSD. Decreasing the
  * probability of that happening by using legacy mode for all ACs but VO isn't
  * enough.
@@ -72,7 +73,8 @@ struct ieee80211_local;
  * possible additional powersavings. Implicitly depending on driver autotrigger
  * frame support doesn't make much sense.
  */
-#define IEEE80211_DEFAULT_UAPSD_QUEUES 0
+#define IEEE80211_DEFAULT_UAPSD_QUEUES \
+	IEEE80211_WMM_IE_STA_QOSINFO_AC_VO
 
 #define IEEE80211_DEFAULT_MAX_SP_LEN		\
 	IEEE80211_WMM_IE_STA_QOSINFO_SP_ALL
