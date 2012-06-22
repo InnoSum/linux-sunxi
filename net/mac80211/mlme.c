@@ -2680,7 +2680,7 @@ static int ieee80211_probe_auth(struct ieee80211_sub_if_data *sdata)
 
 	if (auth_data->bss->proberesp_ies) {
 		sdata_info(sdata, "send auth to %pM (try %d/%d)\n",
-			   sdata->name, auth_data->bss->bssid, auth_data->tries,
+			   auth_data->bss->bssid, auth_data->tries,
 			   IEEE80211_AUTH_MAX_TRIES);
 
 		auth_data->expected_transaction = 2;
@@ -2692,7 +2692,7 @@ static int ieee80211_probe_auth(struct ieee80211_sub_if_data *sdata)
 		const u8 *ssidie;
 
 		sdata_info(sdata, "direct probe to %pM (try %d/%i)\n",
-			   sdata->name, auth_data->bss->bssid, auth_data->tries,
+			   auth_data->bss->bssid, auth_data->tries,
 			   IEEE80211_AUTH_MAX_TRIES);
 
 		ssidie = ieee80211_bss_get_ie(auth_data->bss, WLAN_EID_SSID);
@@ -2722,7 +2722,7 @@ static int ieee80211_do_assoc(struct ieee80211_sub_if_data *sdata)
 	assoc_data->tries++;
 	if (assoc_data->tries > IEEE80211_ASSOC_MAX_TRIES) {
 		sdata_info(sdata, "association with %pM timed out\n",
-			   sdata->name, assoc_data->bss->bssid);
+			   assoc_data->bss->bssid);
 
 		/*
 		 * Most likely AP is not in the range so remove the
@@ -2733,9 +2733,8 @@ static int ieee80211_do_assoc(struct ieee80211_sub_if_data *sdata)
 		return -ETIMEDOUT;
 	}
 
-	printk(KERN_DEBUG "%s: associate with %pM (try %d/%d)\n",
 	sdata_info(sdata, "associate with %pM (try %d/%d)\n",
-		   sdata->name, assoc_data->bss->bssid, assoc_data->tries,
+		   assoc_data->bss->bssid, assoc_data->tries,
 		   IEEE80211_ASSOC_MAX_TRIES);
 	ieee80211_send_assoc(sdata);
 
@@ -2840,11 +2839,9 @@ void ieee80211_sta_work(struct ieee80211_sub_if_data *sdata)
 			 * We actually lost the connection ... or did we?
 			 * Let's make sure!
 			 */
-			wiphy_debug(local->hw.wiphy,
-				    "%s: No probe response from AP %pM"
-				    " after %dms, disconnecting.\n",
-				    sdata->name,
-				    bssid, probe_wait_ms);
+			mlme_dbg(sdata,
+				 "No probe response from AP %pM after %dms, disconnecting.\n",
+				 bssid, probe_wait_ms);
 
 			ieee80211_sta_connection_lost(sdata, bssid,
 				WLAN_REASON_DISASSOC_DUE_TO_INACTIVITY);
