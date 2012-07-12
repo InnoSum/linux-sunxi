@@ -788,58 +788,14 @@ static struct device_type wiphy_type = {
 	.name	= "wlan",
 };
 
-static struct ieee80211_channel *
-cfg80211_get_any_chan(struct cfg80211_registered_device *rdev)
-{
-	struct ieee80211_supported_band *sband;
-	int i;
-
-	for (i = 0; i < IEEE80211_NUM_BANDS; i++) {
-		sband = rdev->wiphy.bands[i];
-		if (sband && sband->n_channels > 0)
-			return &sband->channels[0];
-	}
-
-	return NULL;
-}
-
-static void cfg80211_init_mon_chan(struct cfg80211_registered_device *rdev)
-{
-	struct ieee80211_channel *chan;
-
-	chan = cfg80211_get_any_chan(rdev);
-	if (WARN_ON(!chan))
-		return;
-
-	mutex_lock(&rdev->devlist_mtx);
-	WARN_ON(cfg80211_set_monitor_channel(rdev, chan->center_freq,
-					     NL80211_CHAN_NO_HT));
-	mutex_unlock(&rdev->devlist_mtx);
-}
-
 void cfg80211_update_iface_num(struct cfg80211_registered_device *rdev,
 			       enum nl80211_iftype iftype, int num)
 {
-	bool has_monitors_only_old = cfg80211_has_monitors_only(rdev);
-	bool has_monitors_only_new;
-
 	ASSERT_RTNL();
 
 	rdev->num_running_ifaces += num;
 	if (iftype == NL80211_IFTYPE_MONITOR)
 		rdev->num_running_monitor_ifaces += num;
-
-	has_monitors_only_new = cfg80211_has_monitors_only(rdev);
-	if (has_monitors_only_new != has_monitors_only_old) {
-		rdev->ops->set_monitor_enabled(&rdev->wiphy,
-					       has_monitors_only_new);
-		if (!has_monitors_only_new) {
-			rdev->monitor_channel = NULL;
-			rdev->monitor_channel_type = NL80211_CHAN_NO_HT;
-		} else {
-			cfg80211_init_mon_chan(rdev);
-		}
-	}
 }
 
 static int cfg80211_netdev_notifier_call(struct notifier_block * nb,
@@ -958,6 +914,7 @@ static int cfg80211_netdev_notifier_call(struct notifier_block * nb,
 			mutex_unlock(&rdev->devlist_mtx);
 			dev_put(dev);
 		}
+		cfg80211_update_iface_num(rdev, wdev->iftype, 1);
 		cfg80211_lock_rdev(rdev);
 		mutex_lock(&rdev->devlist_mtx);
 		wdev_lock(wdev);
@@ -1055,9 +1012,6 @@ static int cfg80211_netdev_notifier_call(struct notifier_block * nb,
 		ret = cfg80211_can_add_interface(rdev, wdev->iftype);
 		if (ret)
 			return notifier_from_errno(ret);
-		cfg80211_lock_rdev(rdev);
-		cfg80211_update_iface_num(rdev, wdev->iftype, 1);
-		cfg80211_unlock_rdev(rdev);
 		break;
 	default:
 		return NOTIFY_DONE;
