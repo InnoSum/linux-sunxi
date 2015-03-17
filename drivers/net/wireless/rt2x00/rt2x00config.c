@@ -13,9 +13,7 @@
 	GNU General Public License for more details.
 
 	You should have received a copy of the GNU General Public License
-	along with this program; if not, write to the
-	Free Software Foundation, Inc.,
-	59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
+	along with this program; if not, see <http://www.gnu.org/licenses/>.
  */
 
 /*
@@ -217,6 +215,11 @@ void rt2x00lib_config(struct rt2x00_dev *rt2x00dev,
 	libconf.conf = conf;
 
 	if (ieee80211_flags & IEEE80211_CONF_CHANGE_CHANNEL) {
+		if (!conf_is_ht(conf))
+			set_bit(CONFIG_HT_DISABLED, &rt2x00dev->flags);
+		else
+			clear_bit(CONFIG_HT_DISABLED, &rt2x00dev->flags);
+
 		if (conf_is_ht40(conf)) {
 			set_bit(CONFIG_CHANNEL_HT40, &rt2x00dev->flags);
 			hw_value = rt2x00ht_center_channel(rt2x00dev, conf);
