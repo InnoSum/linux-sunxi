@@ -892,7 +892,7 @@ static int i2c_sunxi_do_xfer(struct sunxi_i2c *i2c, struct i2c_msg *msgs, int nu
 		ret = -ETIME;
 	}
 	else if (ret != num){
-		printk("incomplete xfer (0x%x)\n", ret);
+		//printk("incomplete xfer (0x%x)\n", ret);
 		ret = -ECOMM;
 		//dev_dbg(i2c->adap.dev, "incomplete xfer (%d)\n", ret);
 	}
