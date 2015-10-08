@@ -1045,10 +1045,9 @@ void rt2800_write_beacon(struct queue_entry *entry, struct txentry_desc *txdesc)
 	rt2800_update_beacons_setup(rt2x00dev);
 
 	/*
-	 * Enable beaconing again.
+	 * Restore beaconing state.
 	 */
-	rt2x00_set_field32(&reg, BCN_TIME_CFG_BEACON_GEN, 1);
-	rt2800_register_write(rt2x00dev, BCN_TIME_CFG, reg);
+	rt2800_register_write(rt2x00dev, BCN_TIME_CFG, orig_reg);
 
 	/*
 	 * Clean up beacon skb.
@@ -1079,13 +1078,14 @@ static inline void rt2800_clear_beacon_register(struct rt2x00_dev *rt2x00dev,
 void rt2800_clear_beacon(struct queue_entry *entry)
 {
 	struct rt2x00_dev *rt2x00dev = entry->queue->rt2x00dev;
-	u32 reg;
+	u32 orig_reg, reg;
 
 	/*
 	 * Disable beaconing while we are reloading the beacon data,
 	 * otherwise we might be sending out invalid data.
 	 */
-	rt2800_register_read(rt2x00dev, BCN_TIME_CFG, &reg);
+	rt2800_register_read(rt2x00dev, BCN_TIME_CFG, &orig_reg);
+	reg = orig_reg;
 	rt2x00_set_field32(&reg, BCN_TIME_CFG_BEACON_GEN, 0);
 	rt2800_register_write(rt2x00dev, BCN_TIME_CFG, reg);
 
@@ -1093,12 +1093,16 @@ void rt2800_clear_beacon(struct queue_entry *entry)
 	 * Clear beacon.
 	 */
 	rt2800_clear_beacon_register(rt2x00dev, entry->entry_idx);
+	__clear_bit(ENTRY_BCN_ENABLED, &entry->flags);
 
 	/*
-	 * Enabled beaconing again.
+	 * Change global beacons settings.
 	 */
-	rt2x00_set_field32(&reg, BCN_TIME_CFG_BEACON_GEN, 1);
-	rt2800_register_write(rt2x00dev, BCN_TIME_CFG, reg);
+	rt2800_update_beacons_setup(rt2x00dev);
+	/*
+	 * Restore beaconing state.
+	 */
+	rt2800_register_write(rt2x00dev, BCN_TIME_CFG, orig_reg);
 }
 EXPORT_SYMBOL_GPL(rt2800_clear_beacon);
 
@@ -1377,38 +1381,6 @@ int rt2800_config_shared_key(struct rt2x00_dev *rt2x00dev,
 }
 EXPORT_SYMBOL_GPL(rt2800_config_shared_key);
 
-static inline int rt2800_find_wcid(struct rt2x00_dev *rt2x00dev)
-{
-	struct mac_wcid_entry wcid_entry;
-	int idx;
-	u32 offset;
-
-	/*
-	 * Search for the first free WCID entry and return the corresponding
-	 * index.
-	 *
-	 * Make sure the WCID starts _after_ the last possible shared key
-	 * entry (>32).
-	 *
-	 * Since parts of the pairwise key table might be shared with
-	 * the beacon frame buffers 6 & 7 we should only write into the
-	 * first 222 entries.
-	 */
-	for (idx = 33; idx <= 222; idx++) {
-		offset = MAC_WCID_ENTRY(idx);
-		rt2800_register_multiread(rt2x00dev, offset, &wcid_entry,
-					  sizeof(wcid_entry));
-		if (is_broadcast_ether_addr(wcid_entry.mac))
-			return idx;
-	}
-
-	/*
-	 * Use -1 to indicate that we don't have any more space in the WCID
-	 * table.
-	 */
-	return -1;
-}
-
 int rt2800_config_pairwise_key(struct rt2x00_dev *rt2x00dev,
 			       struct rt2x00lib_crypto *crypto,
 			       struct ieee80211_key_conf *key)
@@ -1421,7 +1393,7 @@ int rt2800_config_pairwise_key(struct rt2x00_dev *rt2x00dev,
 		 * Allow key configuration only for STAs that are
 		 * known by the hw.
 		 */
-		if (crypto->wcid < 0)
+		if (crypto->wcid > WCID_END)
 			return -ENOSPC;
 		key->hw_key_idx = crypto->wcid;
 
@@ -1451,11 +1423,13 @@ int rt2800_sta_add(struct rt2x00_dev *rt2x00dev, struct ieee80211_vif *vif,
 {
 	int wcid;
 	struct rt2x00_sta *sta_priv = sta_to_rt2x00_sta(sta);
+	struct rt2800_drv_data *drv_data = rt2x00dev->drv_data;
 
 	/*
-	 * Find next free WCID.
+	 * Search for the first free WCID entry and return the corresponding
+	 * index.
 	 */
-	wcid = rt2800_find_wcid(rt2x00dev);
+	wcid = find_first_zero_bit(drv_data->sta_ids, STA_IDS_SIZE) + WCID_START;
 
 	/*
 	 * Store selected wcid even if it is invalid so that we can
@@ -1467,8 +1441,10 @@ int rt2800_sta_add(struct rt2x00_dev *rt2x00dev, struct ieee80211_vif *vif,
 	 * No space left in the device, however, we can still communicate
 	 * with the STA -> No error.
 	 */
-	if (wcid < 0)
+	if (wcid > WCID_END)
 		return 0;
+
+	__set_bit(wcid - WCID_START, drv_data->sta_ids);
 
 	/*
 	 * Clean up WCID attributes and write STA address to the device.
@@ -1483,11 +1459,16 @@ EXPORT_SYMBOL_GPL(rt2800_sta_add);
 
 int rt2800_sta_remove(struct rt2x00_dev *rt2x00dev, int wcid)
 {
+	struct rt2800_drv_data *drv_data = rt2x00dev->drv_data;
+
+	if (wcid > WCID_END)
+		return 0;
 	/*
 	 * Remove WCID entry, no need to clean the attributes as they will
 	 * get renewed when the WCID is reused.
 	 */
 	rt2800_config_wcid(rt2x00dev, NULL, wcid);
+	__clear_bit(wcid - WCID_START, drv_data->sta_ids);
 
 	return 0;
 }
@@ -3182,6 +3163,7 @@ static void rt2800_config_channel(struct rt2x00_dev *rt2x00dev,
 		break;
 	case RF3070:
 	case RF5360:
+	case RF5362:
 	case RF5370:
 	case RF5372:
 	case RF5390:
@@ -3199,6 +3181,7 @@ static void rt2800_config_channel(struct rt2x00_dev *rt2x00dev,
 	    rt2x00_rf(rt2x00dev, RF3290) ||
 	    rt2x00_rf(rt2x00dev, RF3322) ||
 	    rt2x00_rf(rt2x00dev, RF5360) ||
+	    rt2x00_rf(rt2x00dev, RF5362) ||
 	    rt2x00_rf(rt2x00dev, RF5370) ||
 	    rt2x00_rf(rt2x00dev, RF5372) ||
 	    rt2x00_rf(rt2x00dev, RF5390) ||
@@ -4113,7 +4096,20 @@ static void rt2800_config_txpower_rt28xx(struct rt2x00_dev *rt2x00dev,
 	 * expected. We adjust it, based on TSSI reference and boundaries values
 	 * provided in EEPROM.
 	 */
-	delta += rt2800_get_gain_calibration_delta(rt2x00dev);
+	switch (rt2x00dev->chip.rt) {
+	case RT2860:
+	case RT2872:
+	case RT2883:
+	case RT3070:
+	case RT3071:
+	case RT3090:
+	case RT3572:
+		delta += rt2800_get_gain_calibration_delta(rt2x00dev);
+		break;
+	default:
+		/* TODO: temperature compensation code for other chips. */
+		break;
+	}
 
 	/*
 	 * Decrease power according to user settings, on devices with unknown
@@ -4130,25 +4126,19 @@ static void rt2800_config_txpower_rt28xx(struct rt2x00_dev *rt2x00dev,
 	 * TODO: we do not use +6 dBm option to do not increase power beyond
 	 * regulatory limit, however this could be utilized for devices with
 	 * CAPABILITY_POWER_LIMIT.
-	 *
-	 * TODO: add different temperature compensation code for RT3290 & RT5390
-	 * to allow to use BBP_R1 for those chips.
 	 */
-	if (!rt2x00_rt(rt2x00dev, RT3290) &&
-	    !rt2x00_rt(rt2x00dev, RT5390)) {
-		rt2800_bbp_read(rt2x00dev, 1, &r1);
-		if (delta <= -12) {
-			power_ctrl = 2;
-			delta += 12;
-		} else if (delta <= -6) {
-			power_ctrl = 1;
-			delta += 6;
-		} else {
-			power_ctrl = 0;
-		}
-		rt2x00_set_field8(&r1, BBP1_TX_POWER_CTRL, power_ctrl);
-		rt2800_bbp_write(rt2x00dev, 1, r1);
+	if (delta <= -12) {
+		power_ctrl = 2;
+		delta += 12;
+	} else if (delta <= -6) {
+		power_ctrl = 1;
+		delta += 6;
+	} else {
+		power_ctrl = 0;
 	}
+	rt2800_bbp_read(rt2x00dev, 1, &r1);
+	rt2x00_set_field8(&r1, BBP1_TX_POWER_CTRL, power_ctrl);
+	rt2800_bbp_write(rt2x00dev, 1, r1);
 
 	offset = TX_PWR_CFG_0;
 
@@ -4313,6 +4303,7 @@ void rt2800_vco_calibration(struct rt2x00_dev *rt2x00dev)
 	case RF3070:
 	case RF3290:
 	case RF5360:
+	case RF5362:
 	case RF5370:
 	case RF5372:
 	case RF5390:
@@ -7091,6 +7082,7 @@ static int rt2800_init_eeprom(struct rt2x00_dev *rt2x00dev)
 	case RF3320:
 	case RF3322:
 	case RF5360:
+	case RF5362:
 	case RF5370:
 	case RF5372:
 	case RF5390:
@@ -7546,6 +7538,7 @@ static int rt2800_probe_hw_mode(struct rt2x00_dev *rt2x00dev)
 	case RF3320:
 	case RF3322:
 	case RF5360:
+	case RF5362:
 	case RF5370:
 	case RF5372:
 	case RF5390:
@@ -7675,6 +7668,7 @@ static int rt2800_probe_hw_mode(struct rt2x00_dev *rt2x00dev)
 	case RF3070:
 	case RF3290:
 	case RF5360:
+	case RF5362:
 	case RF5370:
 	case RF5372:
 	case RF5390:
@@ -7949,11 +7943,11 @@ int rt2800_ampdu_action(struct ieee80211_hw *hw, struct ieee80211_vif *vif,
 	/*
 	 * Don't allow aggregation for stations the hardware isn't aware
 	 * of because tx status reports for frames to an unknown station
-	 * always contain wcid=255 and thus we can't distinguish between
-	 * multiple stations which leads to unwanted situations when the
-	 * hw reorders frames due to aggregation.
+	 * always contain wcid=WCID_END+1 and thus we can't distinguish
+	 * between multiple stations which leads to unwanted situations
+	 * when the hw reorders frames due to aggregation.
 	 */
-	if (sta_priv->wcid < 0)
+	if (sta_priv->wcid > WCID_END)
 		return 1;
 
 	switch (action) {

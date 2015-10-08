@@ -233,6 +233,7 @@ static int rt2800usb_autorun_detect(struct rt2x00_dev *rt2x00dev)
 {
 	__le32 *reg;
 	u32 fw_mode;
+	int ret;
 
 	reg = kmalloc(sizeof(*reg), GFP_KERNEL);
 	if (reg == NULL)
@@ -242,11 +243,14 @@ static int rt2800usb_autorun_detect(struct rt2x00_dev *rt2x00dev)
 	 * magic value USB_MODE_AUTORUN (0x11) to the device, thus the
 	 * returned value would be invalid.
 	 */
-	rt2x00usb_vendor_request(rt2x00dev, USB_DEVICE_MODE,
-				 USB_VENDOR_REQUEST_IN, 0, USB_MODE_AUTORUN,
-				 reg, sizeof(*reg), REGISTER_TIMEOUT_FIRMWARE);
+	ret = rt2x00usb_vendor_request(rt2x00dev, USB_DEVICE_MODE,
+				       USB_VENDOR_REQUEST_IN, 0,
+				       USB_MODE_AUTORUN, reg, sizeof(*reg),
+				       REGISTER_TIMEOUT_FIRMWARE);
 	fw_mode = le32_to_cpu(*reg);
 	kfree(reg);
+	if (ret < 0)
+		return ret;
 
 	if ((fw_mode & 0x00000003) == 2)
 		return 1;
@@ -265,7 +269,7 @@ static int rt2800usb_write_firmware(struct rt2x00_dev *rt2x00dev,
 	int status;
 	u32 offset;
 	u32 length;
-	__le32 fwMode;
+	int retval;
 
 	/*
 	 * Check which section of the firmware we need.
@@ -283,13 +287,13 @@ static int rt2800usb_write_firmware(struct rt2x00_dev *rt2x00dev,
 	/*
 	 * Write firmware to device.
 	 */
-	rt2x00usb_vendor_request(rt2x00dev, USB_DEVICE_MODE,
-				 USB_VENDOR_REQUEST_IN, 0, 0x11, &fwMode,
-				 sizeof(fwMode), REGISTER_TIMEOUT_FIRMWARE);
-
-	if ((fwMode & 0x00000003) == 2) {
+	retval = rt2800usb_autorun_detect(rt2x00dev);
+	if (retval < 0)
+		return retval;
+	if (retval) {
 		rt2x00_info(rt2x00dev,
-		      "Firmware loading not required - NIC in AutoRun mode\n");
+			    "Firmware loading not required - NIC in AutoRun mode\n");
+		__clear_bit(REQUIRE_FIRMWARE, &rt2x00dev->cap_flags);
 	} else {
 		rt2x00usb_register_multiwrite(rt2x00dev, FIRMWARE_IMAGE_BASE,
 					      data + offset, length);
@@ -375,7 +379,6 @@ static int rt2800usb_enable_radio(struct rt2x00_dev *rt2x00dev)
 static void rt2800usb_disable_radio(struct rt2x00_dev *rt2x00dev)
 {
 	rt2800_disable_radio(rt2x00dev);
-	rt2x00usb_disable_radio(rt2x00dev);
 }
 
 static int rt2800usb_set_state(struct rt2x00_dev *rt2x00dev,
@@ -772,15 +775,13 @@ static void rt2800usb_fill_rxdone(struct queue_entry *entry,
  */
 static int rt2800usb_efuse_detect(struct rt2x00_dev *rt2x00dev)
 {
-	__le32 fwMode;
+	int retval;
 
-	rt2x00usb_vendor_request(rt2x00dev, USB_DEVICE_MODE,
-				 USB_VENDOR_REQUEST_IN, 0, 0x11, &fwMode,
-				 sizeof(fwMode), REGISTER_TIMEOUT_FIRMWARE);
-
-	if ((fwMode & 0x00000003) == 2)
+	retval = rt2800usb_autorun_detect(rt2x00dev);
+	if (retval < 0)
+		return retval;
+	if (retval)
 		return 1;
-
 	return rt2800_efuse_detect(rt2x00dev);
 }
 
@@ -1043,6 +1044,7 @@ static struct usb_device_id rt2800usb_device_table[] = {
 	{ USB_DEVICE(0x07d1, 0x3c17) },
 	{ USB_DEVICE(0x2001, 0x3317) },
 	{ USB_DEVICE(0x2001, 0x3c1b) },
+	{ USB_DEVICE(0x2001, 0x3c25) },
 	/* Draytek */
 	{ USB_DEVICE(0x07fa, 0x7712) },
 	/* DVICO */
@@ -1114,6 +1116,7 @@ static struct usb_device_id rt2800usb_device_table[] = {
 	/* Ovislink */
 	{ USB_DEVICE(0x1b75, 0x3071) },
 	{ USB_DEVICE(0x1b75, 0x3072) },
+	{ USB_DEVICE(0x1b75, 0xa200) },
 	/* Para */
 	{ USB_DEVICE(0x20b8, 0x8888) },
 	/* Pegatron */
@@ -1287,6 +1290,8 @@ static struct usb_device_id rt2800usb_device_table[] = {
 	/* Arcadyan */
 	{ USB_DEVICE(0x043e, 0x7a12) },
 	{ USB_DEVICE(0x043e, 0x7a32) },
+	/* ASUS */
+	{ USB_DEVICE(0x0b05, 0x17e8) },
 	/* Azurewave */
 	{ USB_DEVICE(0x13d3, 0x3329) },
 	{ USB_DEVICE(0x13d3, 0x3365) },
@@ -1323,6 +1328,7 @@ static struct usb_device_id rt2800usb_device_table[] = {
 	{ USB_DEVICE(0x057c, 0x8501) },
 	/* Buffalo */
 	{ USB_DEVICE(0x0411, 0x0241) },
+	{ USB_DEVICE(0x0411, 0x0253) },
 	/* D-Link */
 	{ USB_DEVICE(0x2001, 0x3c1a) },
 	{ USB_DEVICE(0x2001, 0x3c21) },
@@ -1413,6 +1419,7 @@ static struct usb_device_id rt2800usb_device_table[] = {
 	{ USB_DEVICE(0x0df6, 0x0053) },
 	{ USB_DEVICE(0x0df6, 0x0069) },
 	{ USB_DEVICE(0x0df6, 0x006f) },
+	{ USB_DEVICE(0x0df6, 0x0078) },
 	/* SMC */
 	{ USB_DEVICE(0x083a, 0xa512) },
 	{ USB_DEVICE(0x083a, 0xc522) },
