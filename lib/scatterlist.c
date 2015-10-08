@@ -39,6 +39,24 @@ struct scatterlist *sg_next(struct scatterlist *sg)
 EXPORT_SYMBOL(sg_next);
 
 /**
+ * sg_nents - return total count of entries in scatterlist
+ * @sg:		The scatterlist
+ *
+ * Description:
+ * Allows to know how many entries are in sg, taking into account
+ * chaining as well
+ *
+ **/
+int sg_nents(struct scatterlist *sg)
+{
+	int nents;
+	for (nents = 0; sg; sg_next(sg))
+		nents++;
+	return nents;
+}
+EXPORT_SYMBOL(sg_nents);
+
+/**
  * sg_last - return the last scatterlist entry in a list
  * @sgl:	First entry in the scatterlist
  * @nents:	Number of entries in the scatterlist
