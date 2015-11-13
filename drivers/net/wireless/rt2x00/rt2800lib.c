@@ -8006,6 +8006,10 @@ int rt2800_get_survey(struct ieee80211_hw *hw, int idx,
 	if (!(hw->conf.flags & IEEE80211_CONF_OFFCHANNEL))
 		survey->filled |= SURVEY_INFO_IN_USE;
 
+	/* If we return something, that allows limited ACS */
+	survey->filled |= SURVEY_INFO_NOISE_DBM;
+	survey->noise = -127;
+
 	return 0;
 
 }
