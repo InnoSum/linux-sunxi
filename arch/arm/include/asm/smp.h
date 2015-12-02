@@ -79,6 +79,7 @@ struct secondary_data {
 	void *stack;
 };
 extern struct secondary_data secondary_data;
+extern void secondary_startup(void);
 
 extern int __cpu_disable(void);
 extern int platform_cpu_disable(unsigned int cpu);
