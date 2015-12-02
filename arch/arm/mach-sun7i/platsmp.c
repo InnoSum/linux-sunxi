@@ -26,8 +26,6 @@
 
 #include "core.h"
 
-extern void sun7i_secondary_startup(void);
-
 static DEFINE_SPINLOCK(boot_lock);
 
 void __cpuinit enable_aw_cpu(int cpu)
@@ -35,7 +33,7 @@ void __cpuinit enable_aw_cpu(int cpu)
     long paddr;
     u32 pwr_reg;
 
-    paddr = virt_to_phys(sun7i_secondary_startup);
+    paddr = virt_to_phys(secondary_startup);
     writel(paddr, IO_ADDRESS(SW_PA_CPUCFG_IO_BASE) + AW_CPUCFG_P_REG0);
 
     /* step1: Assert nCOREPORESET LOW and hold L1RSTDISABLE LOW.
