@@ -341,8 +341,6 @@ static inline bool mesh_path_sel_is_hwmp(struct ieee80211_sub_if_data *sdata)
 	return sdata->u.mesh.mesh_pp_id == IEEE80211_PATH_PROTOCOL_HWMP;
 }
 
-void ieee80211_mesh_notify_scan_completed(struct ieee80211_local *local);
-
 void ieee80211_mesh_quiesce(struct ieee80211_sub_if_data *sdata);
 void ieee80211_mesh_restart(struct ieee80211_sub_if_data *sdata);
 void mesh_plink_quiesce(struct sta_info *sta);
@@ -351,8 +349,6 @@ void mesh_path_flush_by_iface(struct ieee80211_sub_if_data *sdata);
 void mesh_sync_adjust_tbtt(struct ieee80211_sub_if_data *sdata);
 #else
 #define mesh_allocated	0
-static inline void
-ieee80211_mesh_notify_scan_completed(struct ieee80211_local *local) {}
 static inline void ieee80211_mesh_quiesce(struct ieee80211_sub_if_data *sdata)
 {}
 static inline void ieee80211_mesh_restart(struct ieee80211_sub_if_data *sdata)

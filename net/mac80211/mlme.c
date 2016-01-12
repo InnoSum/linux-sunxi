@@ -901,6 +901,9 @@ static bool ieee80211_powersave_allowed(struct ieee80211_sub_if_data *sdata)
 	if (!mgd->associated)
 		return false;
 
+	if (!mgd->associated->beacon_ies)
+		return false;
+
 	if (mgd->flags & (IEEE80211_STA_BEACON_POLL |
 			  IEEE80211_STA_CONNECTION_POLL))
 		return false;
@@ -2911,8 +2914,6 @@ static void ieee80211_restart_sta_timer(struct ieee80211_sub_if_data *sdata)
 		if (!(flags & IEEE80211_HW_CONNECTION_MONITOR))
 			ieee80211_queue_work(&sdata->local->hw,
 					     &sdata->u.mgd.monitor_work);
-		/* and do all the other regular work too */
-		ieee80211_queue_work(&sdata->local->hw, &sdata->work);
 	}
 }
 
