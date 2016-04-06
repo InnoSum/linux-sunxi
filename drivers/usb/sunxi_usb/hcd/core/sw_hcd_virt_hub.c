@@ -194,7 +194,7 @@ static void sw_hcd_port_suspend(struct sw_hcd *sw_hcd, bool do_suspend)
 
 		/* later, GetPortStatus will stop RESUME signaling */
 		sw_hcd->port1_status |= SW_HCD_PORT_STAT_RESUME;
-		sw_hcd->rh_timer = jiffies + msecs_to_jiffies(20);
+		sw_hcd->rh_timer = jiffies + msecs_to_jiffies(40);
     }else{
         DMSG_PANIC("WRN: sw_hcd_port_suspend nothing to do\n");
     }
