@@ -734,7 +734,7 @@ static irqreturn_t sw_hcd_stage0_irq(struct sw_hcd *sw_hcd, u8 int_usb, u8 devct
 			USBC_Writeb(power, USBC_REG_PCTL(usbc_base));
 
 			sw_hcd->port1_status |= (USB_PORT_STAT_C_SUSPEND << 16) | SW_HCD_PORT_STAT_RESUME;
-			sw_hcd->rh_timer = jiffies + msecs_to_jiffies(40);
+			sw_hcd->rh_timer = jiffies + msecs_to_jiffies(20);
 			sw_hcd->is_active = 1;
 			usb_hcd_resume_root_hub(sw_hcd_to_hcd(sw_hcd));
 		} else {
