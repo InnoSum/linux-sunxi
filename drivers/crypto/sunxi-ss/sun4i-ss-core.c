@@ -25,8 +25,9 @@
 
 #include "sun4i-ss.h"
 
-static struct sun4i_ss_alg_template driver_algs[] = {
+static struct sun4i_ss_alg_template ss_algs[] = {
 {       .type = CRYPTO_ALG_TYPE_AHASH,
+	.mode = SS_OP_MD5,
 	.alg.hash = {
 		.init = sun4i_hash_init,
 		.update = sun4i_hash_update,
@@ -37,6 +38,7 @@ static struct sun4i_ss_alg_template driver_algs[] = {
 		.import = sun4i_hash_import_md5,
 		.halg = {
 			.digestsize = MD5_DIGEST_SIZE,
+			.statesize = sizeof(struct md5_state),
 			.base = {
 				.cra_name = "md5",
 				.cra_driver_name = "md5-sun4i-ss",
@@ -53,6 +55,7 @@ static struct sun4i_ss_alg_template driver_algs[] = {
 	}
 },
 {       .type = CRYPTO_ALG_TYPE_AHASH,
+	.mode = SS_OP_SHA1,
 	.alg.hash = {
 		.init = sun4i_hash_init,
 		.update = sun4i_hash_update,
@@ -63,6 +66,7 @@ static struct sun4i_ss_alg_template driver_algs[] = {
 		.import = sun4i_hash_import_sha1,
 		.halg = {
 			.digestsize = SHA1_DIGEST_SIZE,
+			.statesize = sizeof(struct sha1_state),
 			.base = {
 				.cra_name = "sha1",
 				.cra_driver_name = "sha1-sun4i-ss",
@@ -225,11 +229,11 @@ static int sun4i_ss_probe(struct platform_device *pdev)
 		return -ENODEV;
 
 	ss = devm_kzalloc(&pdev->dev, sizeof(*ss), GFP_KERNEL);
-	if (ss == NULL)
+	if (!ss)
 		return -ENOMEM;
 
 	res = platform_get_resource(pdev, IORESOURCE_MEM, 0);
-	ss->base = devm_ioremap(&pdev->dev, res->start, resource_size(res));
+	ss->base = devm_ioremap(&pdev->dev, res, resource_size(res));
 	if (IS_ERR(ss->base)) {
 		dev_err(&pdev->dev, "Cannot request MMIO\n");
 		return PTR_ERR(ss->base);
@@ -264,7 +268,7 @@ static int sun4i_ss_probe(struct platform_device *pdev)
 	}
 
 	/*
-	 * Check that clock have the correct rates gived in the datasheet
+	 * Check that clock have the correct rates given in the datasheet
 	 * Try to set the clock to the maximum allowed
 	 */
 	err = clk_set_rate(ss->ssclk, cr_mod);
@@ -281,22 +285,22 @@ static int sun4i_ss_probe(struct platform_device *pdev)
 	cr = clk_get_rate(ss->busclk);
 	if (cr >= cr_ahb)
 		dev_dbg(&pdev->dev, "Clock bus %lu (%lu MHz) (must be >= %lu)\n",
-				cr, cr / 1000000, cr_ahb);
+			cr, cr / 1000000, cr_ahb);
 	else
 		dev_warn(&pdev->dev, "Clock bus %lu (%lu MHz) (must be >= %lu)\n",
-				cr, cr / 1000000, cr_ahb);
+			 cr, cr / 1000000, cr_ahb);
 
 	cr = clk_get_rate(ss->ssclk);
 	if (cr <= cr_mod)
 		if (cr < cr_mod)
 			dev_warn(&pdev->dev, "Clock ss %lu (%lu MHz) (must be <= %lu)\n",
-					cr, cr / 1000000, cr_mod);
+				 cr, cr / 1000000, cr_mod);
 		else
 			dev_dbg(&pdev->dev, "Clock ss %lu (%lu MHz) (must be <= %lu)\n",
-					cr, cr / 1000000, cr_mod);
+				cr, cr / 1000000, cr_mod);
 	else
 		dev_warn(&pdev->dev, "Clock ss is at %lu (%lu MHz) (must be <= %lu)\n",
-				cr, cr / 1000000, cr_mod);
+			 cr, cr / 1000000, cr_mod);
 
 	/*
 	 * Datasheet named it "Die Bonding ID"
@@ -315,35 +319,38 @@ static int sun4i_ss_probe(struct platform_device *pdev)
 
 	spin_lock_init(&ss->slock);
 
-	for (i = 0; i < ARRAY_SIZE(driver_algs); i++) {
-		driver_algs[i].ss = ss;
-		switch (driver_algs[i].type) {
+	for (i = 0; i < ARRAY_SIZE(ss_algs); i++) {
+		ss_algs[i].ss = ss;
+		switch (ss_algs[i].type) {
 		case CRYPTO_ALG_TYPE_ABLKCIPHER:
-			err = crypto_register_alg(&driver_algs[i].alg.crypto);
-			if (err != 0)
+			err = crypto_register_alg(&ss_algs[i].alg.crypto);
+			if (err != 0) {
+				dev_err(ss->dev, "Fail to register %s\n",
+					ss_algs[i].alg.crypto.cra_name);
 				goto error_alg;
+			}
 			break;
 		case CRYPTO_ALG_TYPE_AHASH:
-			err = crypto_register_ahash(&driver_algs[i].alg.hash);
-			if (err != 0)
+			err = crypto_register_ahash(&ss_algs[i].alg.hash);
+			if (err != 0) {
+				dev_err(ss->dev, "Fail to register %s\n",
+					ss_algs[i].alg.hash.halg.base.cra_name);
 				goto error_alg;
+			}
 			break;
 		}
 	}
 	platform_set_drvdata(pdev, ss);
-
-	sun4i_ss_hwrng_register(&ss->hwrng);
-
 	return 0;
 error_alg:
 	i--;
 	for (; i >= 0; i--) {
-		switch (driver_algs[i].type) {
+		switch (ss_algs[i].type) {
 		case CRYPTO_ALG_TYPE_ABLKCIPHER:
-			crypto_unregister_alg(&driver_algs[i].alg.crypto);
+			crypto_unregister_alg(&ss_algs[i].alg.crypto);
 			break;
 		case CRYPTO_ALG_TYPE_AHASH:
-			crypto_unregister_ahash(&driver_algs[i].alg.hash);
+			crypto_unregister_ahash(&ss_algs[i].alg.hash);
 			break;
 		}
 	}
@@ -359,15 +366,13 @@ static int sun4i_ss_remove(struct platform_device *pdev)
 	int i;
 	struct sun4i_ss_ctx *ss = platform_get_drvdata(pdev);
 
-	sun4i_ss_hwrng_remove(&ss->hwrng);
-
-	for (i = 0; i < ARRAY_SIZE(driver_algs); i++) {
-		switch (driver_algs[i].type) {
+	for (i = 0; i < ARRAY_SIZE(ss_algs); i++) {
+		switch (ss_algs[i].type) {
 		case CRYPTO_ALG_TYPE_ABLKCIPHER:
-			crypto_unregister_alg(&driver_algs[i].alg.crypto);
+			crypto_unregister_alg(&ss_algs[i].alg.crypto);
 			break;
 		case CRYPTO_ALG_TYPE_AHASH:
-			crypto_unregister_ahash(&driver_algs[i].alg.hash);
+			crypto_unregister_ahash(&ss_algs[i].alg.hash);
 			break;
 		}
 	}

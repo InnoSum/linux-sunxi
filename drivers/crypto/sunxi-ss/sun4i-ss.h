@@ -22,7 +22,6 @@
 #include <linux/scatterlist.h>
 #include <linux/interrupt.h>
 #include <linux/delay.h>
-#include <linux/hw_random.h>
 #include <crypto/md5.h>
 #include <crypto/sha.h>
 #include <crypto/hash.h>
@@ -116,13 +115,14 @@
 /* TX FIFO available spaces - bits 16-21 */
 #define SS_TXFIFO_SPACES(val)	(((val) >> 16) & 0x3f)
 
+#define SS_RX_MAX	32
+#define SS_RX_DEFAULT	SS_RX_MAX
+#define SS_TX_MAX	33
+
 #define SS_RXFIFO_EMP_INT_PENDING	(1 << 10)
 #define SS_TXFIFO_AVA_INT_PENDING	(1 << 8)
 #define SS_RXFIFO_EMP_INT_ENABLE	(1 << 2)
 #define SS_TXFIFO_AVA_INT_ENABLE	(1 << 0)
-
-#define SS_SEED_LEN (160/8)
-#define SS_DATA_LEN (160 / 8)
 
 struct sun4i_ss_ctx {
 	void __iomem *base;
@@ -132,12 +132,11 @@ struct sun4i_ss_ctx {
 	struct device *dev;
 	struct resource *res;
 	spinlock_t slock; /* control the use of the device */
-	struct hwrng hwrng;
-	u32 seed[SS_SEED_LEN / 4];
 };
 
 struct sun4i_ss_alg_template {
 	u32 type;
+	u32 mode;
 	union {
 		struct crypto_alg crypto;
 		struct ahash_alg hash;
@@ -193,10 +192,8 @@ int sun4i_ss_ecb_des3_decrypt(struct ablkcipher_request *areq);
 
 int sun4i_ss_cipher_init(struct crypto_tfm *tfm);
 int sun4i_ss_aes_setkey(struct crypto_ablkcipher *tfm, const u8 *key,
-		unsigned int keylen);
+			unsigned int keylen);
 int sun4i_ss_des_setkey(struct crypto_ablkcipher *tfm, const u8 *key,
-		unsigned int keylen);
+			unsigned int keylen);
 int sun4i_ss_des3_setkey(struct crypto_ablkcipher *tfm, const u8 *key,
-		unsigned int keylen);
-int sun4i_ss_hwrng_register(struct hwrng *hwrng);
-void sun4i_ss_hwrng_remove(struct hwrng *hwrng);
+			 unsigned int keylen);

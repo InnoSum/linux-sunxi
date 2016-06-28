@@ -15,20 +15,19 @@
 #include "sun4i-ss.h"
 #include <linux/scatterlist.h>
 
-/* This is a totaly arbitrary value */
+/* This is a totally arbitrary value */
 #define SS_TIMEOUT 100
 
 int sun4i_hash_crainit(struct crypto_tfm *tfm)
 {
 	crypto_ahash_set_reqsize(__crypto_ahash_cast(tfm),
-			sizeof(struct sun4i_req_ctx));
+				 sizeof(struct sun4i_req_ctx));
 	return 0;
 }
 
 /* sun4i_hash_init: initialize request context */
 int sun4i_hash_init(struct ahash_request *areq)
 {
-	const char *hash_type;
 	struct sun4i_req_ctx *op = ahash_request_ctx(areq);
 	struct crypto_ahash *tfm = crypto_ahash_reqtfm(areq);
 	struct ahash_alg *alg = __crypto_ahash_alg(tfm->base.__crt_alg);
@@ -40,15 +39,7 @@ int sun4i_hash_init(struct ahash_request *areq)
 	algt = container_of(alg, struct sun4i_ss_alg_template, alg.hash);
 	ss = algt->ss;
 	op->ss = algt->ss;
-
-	hash_type = crypto_tfm_alg_name(areq->base.tfm);
-
-	if (strcmp(hash_type, "sha1") == 0)
-		op->mode = SS_OP_SHA1;
-	else if (strcmp(hash_type, "md5") == 0)
-		op->mode = SS_OP_MD5;
-	else
-		return -EINVAL;
+	op->mode = algt->mode;
 
 	return 0;
 }
@@ -81,6 +72,8 @@ int sun4i_hash_import_md5(struct ahash_request *areq, const void *in)
 	struct sun4i_req_ctx *op = ahash_request_ctx(areq);
 	const struct md5_state *ictx = in;
 	int i;
+
+	sun4i_hash_init(areq);
 
 	op->byte_count = ictx->byte_count & ~0x3F;
 	op->len = ictx->byte_count & 0x3F;
@@ -123,6 +116,8 @@ int sun4i_hash_import_sha1(struct ahash_request *areq, const void *in)
 	const struct sha1_state *ictx = in;
 	int i;
 
+	sun4i_hash_init(areq);
+
 	op->byte_count = ictx->count & ~0x3F;
 	op->len = ictx->count & 0x3F;
 
@@ -149,7 +144,7 @@ int sun4i_hash_import_sha1(struct ahash_request *areq, const void *in)
  *
  * So at the begin of update()
  * if op->len + areq->nbytes < 64
- * => all data will be writen to wait buffer (op->buf) and end=0
+ * => all data will be written to wait buffer (op->buf) and end=0
  * if not, write all data from op->buf to the device and position end to
  * complete to 64bytes
  *
@@ -173,6 +168,7 @@ int sun4i_hash_update(struct ahash_request *areq)
 
 	struct sun4i_req_ctx *op = ahash_request_ctx(areq);
 	struct sun4i_ss_ctx *ss = op->ss;
+	struct crypto_ahash *tfm = crypto_ahash_reqtfm(areq);
 	unsigned int in_i = 0; /* advancement in the current SG */
 	unsigned int end;
 	/*
@@ -181,14 +177,14 @@ int sun4i_hash_update(struct ahash_request *areq)
 	 */
 	int in_r, err = 0;
 	unsigned int todo;
-	u32 spaces, rx_cnt = 32;
+	u32 spaces, rx_cnt = SS_RX_DEFAULT;
 	size_t copied = 0;
 	struct sg_mapping_iter mi;
 
 	dev_dbg(ss->dev, "%s %s bc=%llu len=%u mode=%x wl=%u h0=%0x",
-			__func__, crypto_tfm_alg_name(areq->base.tfm),
-			op->byte_count, areq->nbytes, op->mode,
-			op->len, op->hash[0]);
+		__func__, crypto_tfm_alg_name(areq->base.tfm),
+		op->byte_count, areq->nbytes, op->mode,
+		op->len, op->hash[0]);
 
 	if (areq->nbytes == 0)
 		return 0;
@@ -202,7 +198,7 @@ int sun4i_hash_update(struct ahash_request *areq)
 	if (op->len + areq->nbytes < 64) {
 		/* linearize data to op->buf */
 		copied = sg_copy_to_buffer(areq->src, sg_nents(areq->src),
-				op->buf + op->len, areq->nbytes);
+					    op->buf + op->len, areq->nbytes);
 		op->len += copied;
 		return 0;
 	}
@@ -211,7 +207,7 @@ int sun4i_hash_update(struct ahash_request *areq)
 
 	if (end > areq->nbytes || areq->nbytes - end > 63) {
 		dev_err(ss->dev, "ERROR: Bound error %u %u\n",
-				end, areq->nbytes);
+			end, areq->nbytes);
 		return -EINVAL;
 	}
 
@@ -229,10 +225,9 @@ int sun4i_hash_update(struct ahash_request *areq)
 	/* Enable the device */
 	writel(op->mode | SS_ENABLED | ivmode, ss->base + SS_CTL);
 
-	rx_cnt = 32;
 	i = 0;
 	sg_miter_start(&mi, areq->src, sg_nents(areq->src),
-			SG_MITER_FROM_SG | SG_MITER_ATOMIC);
+		       SG_MITER_FROM_SG | SG_MITER_ATOMIC);
 	sg_miter_next(&mi);
 	in_i = 0;
 
@@ -240,7 +235,7 @@ int sun4i_hash_update(struct ahash_request *areq)
 		/*
 		 * we need to linearize in two case:
 		 * - the buffer is already used
-		 * - the SG does not have enought byte remaining ( < 4)
+		 * - the SG does not have enough byte remaining ( < 4)
 		 */
 		if (op->len > 0 || (mi.length - in_i) < 4) {
 			/*
@@ -251,7 +246,7 @@ int sun4i_hash_update(struct ahash_request *areq)
 			while (op->len < 64 && i < end) {
 				/* how many bytes we can read from current SG */
 				in_r = min3(mi.length - in_i, end - i,
-						64 - op->len);
+					    64 - op->len);
 				memcpy(op->buf + op->len, mi.addr + in_i, in_r);
 				op->len += in_r;
 				i += in_r;
@@ -264,7 +259,7 @@ int sun4i_hash_update(struct ahash_request *areq)
 			if (op->len > 3 && (op->len % 4) == 0) {
 				/* write buf to the device */
 				writesl(ss->base + SS_RXFIFO, op->buf,
-						op->len / 4);
+					op->len / 4);
 				op->byte_count += op->len;
 				op->len = 0;
 			}
@@ -272,7 +267,7 @@ int sun4i_hash_update(struct ahash_request *areq)
 		if (mi.length - in_i > 3 && i < end) {
 			/* how many bytes we can read from current SG */
 			in_r = min3(mi.length - in_i, areq->nbytes - i,
-					((mi.length - in_i) / 4) * 4);
+				    ((mi.length - in_i) / 4) * 4);
 			/* how many bytes we can write in the device*/
 			todo = min3((u32)(end - i) / 4, rx_cnt, (u32)in_r / 4);
 			writesl(ss->base + SS_RXFIFO, mi.addr + in_i, todo);
@@ -295,7 +290,7 @@ int sun4i_hash_update(struct ahash_request *areq)
 		while (i < areq->nbytes && in_i < mi.length && op->len < 64) {
 			/* how many bytes we can read from current SG */
 			in_r = min3(mi.length - in_i, areq->nbytes - i,
-					64 - op->len);
+				    64 - op->len);
 			memcpy(op->buf + op->len, mi.addr + in_i, in_r);
 			op->len += in_r;
 			i += in_r;
@@ -316,20 +311,16 @@ int sun4i_hash_update(struct ahash_request *areq)
 		i++;
 	} while (i < SS_TIMEOUT && (v & SS_DATA_END) > 0);
 	if (i >= SS_TIMEOUT) {
-		dev_err(ss->dev, "ERROR: hash end timeout %d>%d ctl=%x len=%u\n",
-				i, SS_TIMEOUT, v, areq->nbytes);
+		dev_err(ss->dev,
+				    "ERROR: hash end timeout %d>%d ctl=%x len=%u\n",
+				    i, SS_TIMEOUT, v, areq->nbytes);
 		err = -EIO;
 		goto release_ss;
 	}
 
 	/* get the partial hash only if something was written */
-	if (op->mode == SS_OP_SHA1) {
-		for (i = 0; i < 5; i++)
-			op->hash[i] = readl(ss->base + SS_MD0 + i * 4);
-	} else {
-		for (i = 0; i < 4; i++)
-			op->hash[i] = readl(ss->base + SS_MD0 + i * 4);
-	}
+	for (i = 0; i < crypto_ahash_digestsize(tfm) / 4; i++)
+		op->hash[i] = readl(ss->base + SS_MD0 + i * 4);
 
 release_ss:
 	writel(0, ss->base + SS_CTL);
@@ -356,23 +347,24 @@ int sun4i_hash_final(struct ahash_request *areq)
 	__be64 bits;
 	struct sun4i_req_ctx *op = ahash_request_ctx(areq);
 	struct sun4i_ss_ctx *ss = op->ss;
+	struct crypto_ahash *tfm = crypto_ahash_reqtfm(areq);
 	u32 bf[32];
 	u32 wb = 0;
 	unsigned int nwait, nbw = 0;
 
 	dev_dbg(ss->dev, "%s: byte=%llu len=%u mode=%x wl=%u h=%x",
-			__func__, op->byte_count, areq->nbytes, op->mode,
-			op->len, op->hash[0]);
+		__func__, op->byte_count, areq->nbytes, op->mode,
+		op->len, op->hash[0]);
 
 	spin_lock_bh(&ss->slock);
 
 	/*
-	 * if we have already writed something,
+	 * if we have already written something,
 	 * restore the partial hash state
 	 */
 	if (op->byte_count > 0) {
 		ivmode = SS_IV_ARBITRARY;
-		for (i = 0; i < 5; i++)
+		for (i = 0; i < crypto_ahash_digestsize(tfm) / 4; i++)
 			writel(op->hash[i], ss->base + SS_IV0 + i * 4);
 	}
 	writel(op->mode | SS_ENABLED | ivmode, ss->base + SS_CTL);
@@ -399,7 +391,7 @@ int sun4i_hash_final(struct ahash_request *areq)
 
 	/*
 	 * number of space to pad to obtain 64o minus 8(size) minus 4 (final 1)
-	 * I take the operations from other md5/sha1 implementations
+	 * I take the operations from other MD5/SHA1 implementations
 	 */
 
 	/* we have already send 4 more byte of which nbw data */
@@ -417,8 +409,6 @@ int sun4i_hash_final(struct ahash_request *areq)
 		zeros = (padlen - 1) / 4;
 	}
 
-	/*for (i = 0; i < zeros; i++)
-		bf[j++] = 0;*/
 	memset(bf + j, 0, 4 * zeros);
 	j += zeros;
 
@@ -438,7 +428,7 @@ int sun4i_hash_final(struct ahash_request *areq)
 
 	/*
 	 * Wait for SS to finish the hash.
-	 * The timeout could happend only in case of bad overcloking
+	 * The timeout could happen only in case of bad overcloking
 	 * or driver bug.
 	 */
 	i = 0;
@@ -447,8 +437,9 @@ int sun4i_hash_final(struct ahash_request *areq)
 		i++;
 	} while (i < SS_TIMEOUT && (v & SS_DATA_END) > 0);
 	if (i >= SS_TIMEOUT) {
-		dev_err(ss->dev, "ERROR: hash end timeout %d>%d ctl=%x len=%u\n",
-				i, SS_TIMEOUT, v, areq->nbytes);
+		dev_err(ss->dev,
+				    "ERROR: hash end timeout %d>%d ctl=%x len=%u\n",
+				    i, SS_TIMEOUT, v, areq->nbytes);
 		err = -EIO;
 		goto release_ss;
 	}
