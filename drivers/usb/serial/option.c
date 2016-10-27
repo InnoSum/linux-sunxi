@@ -572,6 +572,11 @@ static const struct option_blacklist_info four_g_w100_blacklist = {
 	.reserved = BIT(3),
 };
 
+static const struct option_blacklist_info four_g_w100_blacklist = {
+	.sendsetup = BIT(1) | BIT(2),
+	.reserved = BIT(3),
+};
+
 static const struct option_blacklist_info alcatel_x200_blacklist = {
 	.sendsetup = BIT(0) | BIT(1),
 	.reserved = BIT(4),

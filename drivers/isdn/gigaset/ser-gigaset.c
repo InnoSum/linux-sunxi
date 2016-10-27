@@ -416,7 +416,6 @@ static int gigaset_initcshw(struct cardstate *cs)
 		cs->hw.ser = NULL;
 		return 0;
 	}
-	dev_set_drvdata(&cs->hw.ser->dev.dev, cs);
 
 	tasklet_init(&cs->write_tasklet,
 		     gigaset_modem_fill, (unsigned long) cs);

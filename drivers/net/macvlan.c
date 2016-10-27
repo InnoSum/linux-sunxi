@@ -117,6 +117,7 @@ static int macvlan_broadcast_one(struct sk_buff *skb,
 	if (local)
 		return vlan->forward(dev, skb);
 
+	*pskb = skb;
 	skb->dev = dev;
 	if (!compare_ether_addr_64bits(eth->h_dest,
 				       dev->broadcast))

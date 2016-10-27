@@ -166,6 +166,9 @@ ENTRY(secondary_startup_64)
 	/* Sanitize CPU configuration */
 	call verify_cpu
 
+	/* Sanitize CPU configuration */
+	call verify_cpu
+
 	/* Enable PAE mode and PGE */
 	movl	$(X86_CR4_PAE | X86_CR4_PGE), %eax
 	movq	%rax, %cr4

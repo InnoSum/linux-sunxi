@@ -359,6 +359,7 @@ void xen_pcibk_do_op(struct work_struct *data)
 			op->err = xen_pcibk_disable_msi(pdev, dev, op);
 			break;
 		case XEN_PCI_OP_enable_msix:
+			nr = op->value;
 			op->err = xen_pcibk_enable_msix(pdev, dev, op);
 			break;
 		case XEN_PCI_OP_disable_msix:

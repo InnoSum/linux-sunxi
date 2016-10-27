@@ -1505,6 +1505,7 @@ static struct irqaction *__free_percpu_irq(unsigned int irq, void __percpu *dev_
 	if (!desc)
 		return NULL;
 
+	chip_bus_lock(desc);
 	raw_spin_lock_irqsave(&desc->lock, flags);
 
 	action = desc->action;
@@ -1523,6 +1524,7 @@ static struct irqaction *__free_percpu_irq(unsigned int irq, void __percpu *dev_
 	desc->action = NULL;
 
 	raw_spin_unlock_irqrestore(&desc->lock, flags);
+	chip_bus_sync_unlock(desc);
 
 	unregister_handler_proc(irq, action);
 

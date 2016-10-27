@@ -309,7 +309,7 @@ static __inline__ int atomic_sub_if_positive(int i, atomic_t * v)
  * @u: ...unless v is equal to u.
  *
  * Atomically adds @a to @v, so long as it was not @u.
- * Returns the old value of @v.
+ * Returns true iff @v was not @u.
  */
 static __inline__ int __atomic_add_unless(atomic_t *v, int a, int u)
 {

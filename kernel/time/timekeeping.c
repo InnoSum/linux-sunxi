@@ -24,6 +24,9 @@
 extern ktime_t ntp_get_next_leap(void);
 extern int __do_adjtimex(struct timex *);
 
+extern ktime_t ntp_get_next_leap(void);
+extern int __do_adjtimex(struct timex *);
+
 /* Structure holding internal timekeeping values. */
 struct timekeeper {
 	/* Current clocksource used for timekeeping. */
@@ -1186,6 +1189,16 @@ void getboottime(struct timespec *ts)
 }
 EXPORT_SYMBOL_GPL(getboottime);
 
+/*
+ * do_adjtimex() - Accessor function to NTP __do_adjtimex function
+ */
+int do_adjtimex(struct timex *txc)
+{
+	int ret;
+	ret = __do_adjtimex(txc);
+	tk_update_leap_state(&timekeeper);
+	return ret;
+}
 
 /**
  * get_monotonic_boottime - Returns monotonic time since boot
@@ -1376,17 +1389,6 @@ ktime_t ktime_get_monotonic_offset(void)
 	return timespec_to_ktime(wtom);
 }
 EXPORT_SYMBOL_GPL(ktime_get_monotonic_offset);
-
-/*
- * do_adjtimex() - Accessor function to NTP __do_adjtimex function
- */
-int do_adjtimex(struct timex *txc)
-{
-	int ret;
-	ret = __do_adjtimex(txc);
-	tk_update_leap_state(&timekeeper);
-	return ret;
-}
 
 /**
  * xtime_update() - advances the timekeeping infrastructure

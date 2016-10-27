@@ -371,18 +371,6 @@ void ntp_clear(void)
 
 }
 
-
-u64 ntp_tick_length(void)
-{
-	unsigned long flags;
-	s64 ret;
-
-	spin_lock_irqsave(&ntp_lock, flags);
-	ret = tick_length;
-	spin_unlock_irqrestore(&ntp_lock, flags);
-	return ret;
-}
-
 /**
  * ntp_get_next_leap - Returns the next leapsecond in CLOCK_REALTIME ktime_t
  *
@@ -396,6 +384,17 @@ ktime_t ntp_get_next_leap(void)
 	if ((time_state == TIME_INS) && (time_status & STA_INS))
 		return ktime_set(ntp_next_leap_sec, 0);
 	ret.tv64 = KTIME_MAX;
+	return ret;
+}
+
+u64 ntp_tick_length(void)
+{
+	unsigned long flags;
+	s64 ret;
+
+	spin_lock_irqsave(&ntp_lock, flags);
+	ret = tick_length;
+	spin_unlock_irqrestore(&ntp_lock, flags);
 	return ret;
 }
 

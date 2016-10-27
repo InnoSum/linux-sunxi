@@ -1248,6 +1248,7 @@ void install_exec_creds(struct linux_binprm *bprm)
 }
 EXPORT_SYMBOL(install_exec_creds);
 
+#if 0
 static void bprm_fill_uid(struct linux_binprm *bprm)
 {
 	struct inode *inode;
@@ -1286,6 +1287,7 @@ static void bprm_fill_uid(struct linux_binprm *bprm)
 		bprm->cred->egid = gid;
 	}
 }
+#endif
 
 /*
  * determine how safe it is to execute the proposed program
