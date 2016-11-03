@@ -510,6 +510,13 @@ void aw_spi_set_sample_delay(u32 on_off, void *base_addr)
     writel(reg_val, base_addr + SPI_CTL_REG);
 }
 
+/* keep unused burst */
+void spi_clear_dhb(void *base_addr)
+{
+	u32 reg_val = readl(base_addr + SPI_CTL_REG);
+	reg_val &= ~SPI_CTL_DHB;
+	writel(reg_val, base_addr + SPI_CTL_REG);
+}
 
 static int spi_sunxi_get_cfg_csbitmap(int bus_num);
 
@@ -580,9 +587,11 @@ static void spi_sunxi_dma_cb(struct sw_dma_chan *dma_ch, void *buf, int size, en
         aw_spi_disable_dma_irq(SPI_DRQEN_THE, aw_spi->base_addr);
     }
     else {
-        spi_wrn("unknow dma direction = %d \n",aw_spi->dma_dir);
+        spi_wrn("unknown dma direction = %d \n",aw_spi->dma_dir);
     }
+#if 0
     aw_spi_sel_dma_type(0, aw_spi->base_addr);
+#endif
 	spin_unlock_irqrestore(&aw_spi->lock, flags);
 }
 #else
@@ -608,7 +617,9 @@ static void spi_sunxi_dma_tx_cb(struct sw_dma_chan *dma_ch, void *buf, int size,
 
     //spi_msg("spi dma tx -write data\n");
     aw_spi_disable_dma_irq(SPI_DRQEN_THE, aw_spi->base_addr);
+#if 0
     aw_spi_sel_dma_type(0, aw_spi->base_addr);
+#endif
 	spin_unlock_irqrestore(&aw_spi->lock, flags);
 }
 
@@ -634,7 +645,9 @@ static void spi_sunxi_dma_rx_cb(struct sw_dma_chan *dma_ch, void *buf, int size,
 	}
     //spi_msg("spi dma rx -read data\n");
     aw_spi_disable_dma_irq(SPI_DRQEN_RHF, aw_spi->base_addr);
+#if 0
     aw_spi_sel_dma_type(0, aw_spi->base_addr);
+#endif
 	spin_unlock_irqrestore(&aw_spi->lock, flags);
 }
 #endif
@@ -676,7 +689,7 @@ static int spi_sunxi_config_dma(struct sunxi_spi *aw_spi, enum sw_dmadir dma_dir
 	    spi_hw_conf.from         = spi_phyaddr[bus_num] + SPI_RXDATA_REG; // physical address, source address
 	}
 	else {
-	    spi_wrn("[spi-%d]: unknow dma direction = %d \n", bus_num, dma_dir);
+	    spi_wrn("[spi-%d]: unknown dma direction = %d \n", bus_num, dma_dir);
 	    return -1;
 	}
     #else
@@ -696,7 +709,7 @@ static int spi_sunxi_config_dma(struct sunxi_spi *aw_spi, enum sw_dmadir dma_dir
 	    spi_hw_conf.from         = spi_phyaddr[bus_num] + SPI_RXDATA_REG; // physical address, source address
 	}
 	else {
-	    spi_wrn("[spi-%d]: unknow dma direction = %d \n", bus_num, dma_dir);
+	    spi_wrn("[spi-%d]: unknown dma direction = %d \n", bus_num, dma_dir);
 	    return -1;
 	}
     spi_hw_conf.cmbk        = 0x07070707;
@@ -776,7 +789,7 @@ static int spi_sunxi_prepare_dma(struct sunxi_spi *aw_spi, enum sw_dmadir dma_di
 		ret += sw_dma_setflags(aw_spi->dma_rx_id, 0); // set flag ??? dma run status, mainly usd
 	}
 	else {
-		spi_wrn("[spi-%d]: unknow dma direction = %d\n", bus_num, dma_dir);
+		spi_wrn("[spi-%d]: unknown dma direction = %d\n", bus_num, dma_dir);
 	    return -1;
 	}
 	#endif
@@ -903,7 +916,7 @@ static int spi_sunxi_xfer_setup(struct spi_device *spi, struct spi_transfer *t)
 
 
 /*
- * > 64 : cpu ;  =< 64 : dma
+ * <=64 : cpu ;  > 64 : dma
  * wait for done completion in this function, wakup in the irq hanlder
  */
 static int spi_sunxi_xfer(struct spi_device *spi, struct spi_transfer *t)
@@ -911,7 +924,7 @@ static int spi_sunxi_xfer(struct spi_device *spi, struct spi_transfer *t)
 	struct sunxi_spi *aw_spi = spi_master_get_devdata(spi->master);
 	void __iomem* base_addr = aw_spi->base_addr;
 	unsigned long flags = 0;
-	unsigned tx_len = 0;	/* number of bytes receieved */
+	unsigned tx_len = 0;	/* number of bytes received */
 	unsigned rx_len = 0;	/* number of bytes sent */
 	unsigned char *rx_buf = (unsigned char *)t->rx_buf;
 	unsigned char *tx_buf = (unsigned char *)t->tx_buf;
@@ -934,7 +947,7 @@ static int spi_sunxi_xfer(struct spi_device *spi, struct spi_transfer *t)
     /* reset tx/rx fifo */
     aw_spi_reset_fifo(base_addr);
 
-    aw_spi_set_bc_wtc(t->len, tx_len, base_addr);
+    aw_spi_set_bc_wtc(tx_len + rx_len, tx_len, base_addr);
 
     /*
      * 1. Tx/Rx error irq,process in IRQ;
@@ -950,7 +963,9 @@ static int spi_sunxi_xfer(struct spi_device *spi, struct spi_transfer *t)
 		    spi_wrn("Full duplex not supported for normal dma!\n");
 			return EINVAL;
 		}
+#if 0
         aw_spi_sel_dma_type(0, base_addr);
+#endif
         #else
         aw_spi_sel_dma_type(1, base_addr);
         #endif
@@ -1015,7 +1030,7 @@ static int spi_sunxi_xfer(struct spi_device *spi, struct spi_transfer *t)
 			    if(aw_spi_query_rxfifo(base_addr)){
 			        *rx_buf++ =  readb(base_addr + SPI_RXDATA_REG);//fetch data
 			        --rx_len;
-			        poll_time = 0xffff;
+			        poll_time = 0xfffff;
 			    }
 			}
 		} else {
@@ -1081,9 +1096,13 @@ static void spi_sunxi_work(struct work_struct *work)
 			}
 			/* update the new cs value */
 			cs_change = t->cs_change;
+
+			if (t->rx_buf && t->tx_buf) {
+				spi_clear_dhb(aw_spi->base_addr);
+			}
 			/*
              * do transfer
-			 * > 64 : cpu ;  =< 64 : dma
+			 * <= 64 : cpu ; > 64 : dma
 			 * wait for done completion in this function, wakup in the irq hanlder
 			 */
 			status = spi_sunxi_xfer(spi, t);
