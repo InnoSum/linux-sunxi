@@ -20,6 +20,37 @@
 #ifndef RT2800LIB_H
 #define RT2800LIB_H
 
+#include "rt2800.h"
+
+enum rt2800_flag {
+	RT2800_HAS_HIGH_SHARED_MEM,
+};
+
+/* RT2800 driver data structure */
+struct rt2800_drv_data {
+	u8 calibration_bw20;
+	u8 calibration_bw40;
+	u8 bbp25;
+	u8 bbp26;
+	u8 txmixer_gain_24g;
+	u8 txmixer_gain_5g;
+	u8 max_psdu;
+	unsigned int tbtt_tick;
+	unsigned int ampdu_factor_cnt[4];
+	unsigned int hw_beacon_count;
+	DECLARE_BITMAP(sta_ids, STA_IDS_SIZE);
+
+	unsigned long rt2800_flags;
+
+	/* locks to serialize shared memory access */
+	union {
+		/* a spinlock is used for MMIO devices */
+		spinlock_t spin;
+		/* a mutex is used for PCI devices */
+		struct mutex mutex;
+	} shmem_lock;
+};
+
 struct rt2800_ops {
 	void (*register_read)(struct rt2x00_dev *rt2x00dev,
 			      const unsigned int offset, u32 *value);
@@ -48,7 +79,41 @@ struct rt2800_ops {
 				  const u8 *data, const size_t len);
 	int (*drv_init_registers)(struct rt2x00_dev *rt2x00dev);
 	__le32 *(*drv_get_txwi)(struct queue_entry *entry);
+
+	void (*shmem_init_lock)(struct rt2x00_dev *rt2x00dev);
+	void (*shmem_lock)(struct rt2x00_dev *rt2x00dev);
+	void (*shmem_unlock)(struct rt2x00_dev *rt2x00dev);
 };
+
+static inline bool rt2800_has_high_shared_mem(struct rt2x00_dev *rt2x00dev)
+{
+	struct rt2800_drv_data *drv_data = rt2x00dev->drv_data;
+
+	return test_bit(RT2800_HAS_HIGH_SHARED_MEM, &drv_data->rt2800_flags);
+}
+
+static inline void rt2800_shared_mem_init_lock(struct rt2x00_dev *rt2x00dev)
+{
+	const struct rt2800_ops *rt2800ops = rt2x00dev->ops->drv;
+
+	rt2800ops->shmem_init_lock(rt2x00dev);
+}
+
+static inline void rt2800_shared_mem_lock(struct rt2x00_dev *rt2x00dev)
+{
+	const struct rt2800_ops *rt2800ops = rt2x00dev->ops->drv;
+
+	if (rt2800_has_high_shared_mem(rt2x00dev))
+		rt2800ops->shmem_lock(rt2x00dev);
+}
+
+static inline void rt2800_shared_mem_unlock(struct rt2x00_dev *rt2x00dev)
+{
+	const struct rt2800_ops *rt2800ops = rt2x00dev->ops->drv;
+
+	if (rt2800_has_high_shared_mem(rt2x00dev))
+		rt2800ops->shmem_unlock(rt2x00dev);
+}
 
 static inline void rt2800_register_read(struct rt2x00_dev *rt2x00dev,
 					const unsigned int offset,
