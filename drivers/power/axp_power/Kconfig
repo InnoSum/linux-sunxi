@@ -33,7 +33,7 @@ config AXP_CHARGEINIT
 	default y
 
 config AXP_CHGCHANGE
-	bool "AXP charging current set when suspend\resume\shutdown"
+	bool "AXP charging current set when suspend/resume/shutdown"
 	default y
 
 config AXP_HWMON
