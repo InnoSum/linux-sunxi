@@ -48,6 +48,7 @@ struct rt2800_drv_data {
 	unsigned int ampdu_factor_cnt[4];
 	unsigned int hw_beacon_count;
 	DECLARE_BITMAP(sta_ids, STA_IDS_SIZE);
+	struct ieee80211_sta *wcid_to_sta[STA_IDS_SIZE];
 
 	unsigned long rt2800_flags;
 
