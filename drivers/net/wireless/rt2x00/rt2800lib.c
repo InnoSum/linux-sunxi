@@ -869,7 +869,6 @@ EXPORT_SYMBOL_GPL(rt2800_process_rxwi);
 void rt2800_txdone_entry(struct queue_entry *entry, u32 status, __le32 *txwi)
 {
 	struct rt2x00_dev *rt2x00dev = entry->queue->rt2x00dev;
-	struct rt2800_drv_data *drv_data = rt2x00dev->drv_data;
 	struct skb_frame_desc *skbdesc = get_skb_frame_desc(entry->skb);
 	struct txdone_entry_desc txdesc;
 	u32 word;
