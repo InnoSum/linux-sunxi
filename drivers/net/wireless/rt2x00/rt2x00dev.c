@@ -458,7 +458,6 @@ void rt2x00lib_txdone_nomatch(struct queue_entry *entry,
 
 		rt2x00lib_fill_tx_status(rt2x00dev, &txinfo, skbdesc, txdesc,
 						    success);
-		ieee80211_tx_status_noskb(rt2x00dev->hw, skbdesc->sta, &txinfo);
 	}
 
 	dev_kfree_skb_any(entry->skb);
