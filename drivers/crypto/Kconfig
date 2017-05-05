@@ -303,7 +303,6 @@ config CRYPTO_DEV_SUN4I_SS
 	select CRYPTO_AES
 	select CRYPTO_DES
 	select CRYPTO_BLKCIPHER
-	select HW_RANDOM
 	help
 	  Some Allwinner SoC have a crypto accelerator named
 	  Security System. Select this if you want to use it.
