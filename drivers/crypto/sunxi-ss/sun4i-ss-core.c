@@ -233,7 +233,7 @@ static int sun4i_ss_probe(struct platform_device *pdev)
 		return -ENOMEM;
 
 	res = platform_get_resource(pdev, IORESOURCE_MEM, 0);
-	ss->base = devm_ioremap(&pdev->dev, res, resource_size(res));
+	ss->base = devm_ioremap(&pdev->dev, res->start, resource_size(res));
 	if (IS_ERR(ss->base)) {
 		dev_err(&pdev->dev, "Cannot request MMIO\n");
 		return PTR_ERR(ss->base);
