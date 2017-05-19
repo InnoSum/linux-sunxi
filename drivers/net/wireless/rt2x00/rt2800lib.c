@@ -196,6 +196,8 @@ static u8 rt2800_rfcsr_read(struct rt2x00_dev *rt2x00dev,
 	value = rt2x00_get_field32(reg, RF_CSR_CFG_DATA);
 
 	mutex_unlock(&rt2x00dev->csr_mutex);
+
+	return value;
 }
 
 static void rt2800_rf_write(struct rt2x00_dev *rt2x00dev,
@@ -1182,6 +1184,12 @@ void rt2800_clear_beacon(struct queue_entry *entry)
 EXPORT_SYMBOL_GPL(rt2800_clear_beacon);
 
 #ifdef CONFIG_RT2X00_LIB_DEBUGFS
+static void rt2800_rfcsr_readreg(struct rt2x00_dev *rt2x00dev,
+				 const unsigned int word, u8 *value)
+{
+	*value = rt2800_rfcsr_read(rt2x00dev, word);
+}
+
 const struct rt2x00debug rt2800_rt2x00debug = {
 	.owner	= THIS_MODULE,
 	.csr	= {
@@ -1217,7 +1225,7 @@ const struct rt2x00debug rt2800_rt2x00debug = {
 		.word_count	= RF_SIZE / sizeof(u32),
 	},
 	.rfcsr	= {
-		.read		= rt2800_rfcsr_read,
+		.read		= rt2800_rfcsr_readreg,
 		.write		= rt2800_rfcsr_write,
 		.word_base	= RFCSR_BASE,
 		.word_size	= sizeof(u8),
