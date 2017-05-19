@@ -3567,7 +3567,7 @@ static void rt2800_config_channel(struct rt2x00_dev *rt2x00dev,
 	 * Clear update flag
 	 */
 	if (rt2x00_rt(rt2x00dev, RT3352)) {
-		bpp = rt2800_bbp_read(rt2x00dev, 49);
+		bbp = rt2800_bbp_read(rt2x00dev, 49);
 		rt2x00_set_field8(&bbp, BBP49_UPDATE_FLAG, 0);
 		rt2800_bbp_write(rt2x00dev, 49, bbp);
 	}
