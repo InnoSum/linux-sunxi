@@ -125,30 +125,20 @@ static inline void rt2800_shared_mem_unlock(struct rt2x00_dev *rt2x00dev)
 		rt2800ops->shmem_unlock(rt2x00dev);
 }
 
-static inline void rt2800_register_read(struct rt2x00_dev *rt2x00dev,
-					const unsigned int offset,
-					u32 *value)
-{
-	const struct rt2800_ops *rt2800ops = rt2x00dev->ops->drv;
-
-	*value = rt2800ops->register_read(rt2x00dev, offset);
-}
-
-static inline void rt2800_register_read_lock(struct rt2x00_dev *rt2x00dev,
-					     const unsigned int offset,
-					     u32 *value)
-{
-	const struct rt2800_ops *rt2800ops = rt2x00dev->ops->drv;
-
-	*value = rt2800ops->register_read_lock(rt2x00dev, offset);
-}
-
-static inline u32 _rt2800_register_read(struct rt2x00_dev *rt2x00dev,
-					const unsigned int offset)
+static inline u32 rt2800_register_read(struct rt2x00_dev *rt2x00dev,
+				       const unsigned int offset)
 {
 	const struct rt2800_ops *rt2800ops = rt2x00dev->ops->drv;
 
 	return rt2800ops->register_read(rt2x00dev, offset);
+}
+
+static inline u32 rt2800_register_read_lock(struct rt2x00_dev *rt2x00dev,
+					    const unsigned int offset)
+{
+	const struct rt2800_ops *rt2800ops = rt2x00dev->ops->drv;
+
+	return rt2800ops->register_read_lock(rt2x00dev, offset);
 }
 
 static inline void rt2800_register_write(struct rt2x00_dev *rt2x00dev,
