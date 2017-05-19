@@ -160,7 +160,7 @@ void rt2x00debug_dump_frame(struct rt2x00_dev *rt2x00dev,
 			    enum rt2x00_dump_type type, struct queue_entry *entry)
 {
 	struct rt2x00debug_intf *intf = rt2x00dev->debugfs_intf;
-	struct sk_buff *skb = entry;
+	struct sk_buff *skb = entry->skb;
 	struct skb_frame_desc *skbdesc = get_skb_frame_desc(skb);
 	struct sk_buff *skbcopy;
 	struct rt2x00dump_hdr *dump_hdr;
@@ -460,7 +460,7 @@ static ssize_t rt2x00debug_read_##__name(struct file *file,	\
 	if (debug->__name.flags & RT2X00DEBUGFS_OFFSET)		\
 		index *= debug->__name.word_size;		\
 								\
-	debug->__name.read(intf->rt2x00dev, index, &value);	\
+	value = debug->__name.read(intf->rt2x00dev, index);	\
 								\
 	size = sprintf(line, __format, value);			\
 								\

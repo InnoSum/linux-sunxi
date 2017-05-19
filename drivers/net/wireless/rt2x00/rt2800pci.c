@@ -70,7 +70,7 @@ static void rt2800pci_mcu_status(struct rt2x00_dev *rt2x00dev, const u8 token)
 
 	for (i = 0; i < 200; i++) {
 		rt2800_shared_mem_lock(rt2x00dev);
-		rt2x00mmio_register_read(rt2x00dev, H2M_MAILBOX_CID, &reg);
+		reg = rt2x00mmio_register_read(rt2x00dev, H2M_MAILBOX_CID);
 		rt2800_shared_mem_unlock(rt2x00dev);
 
 		if ((rt2x00_get_field32(reg, H2M_MAILBOX_CID_CMD0) == token) ||
@@ -96,7 +96,7 @@ static void rt2800pci_eepromregister_read(struct eeprom_93cx6 *eeprom)
 	struct rt2x00_dev *rt2x00dev = eeprom->data;
 	u32 reg;
 
-	rt2x00mmio_register_read(rt2x00dev, E2PROM_CSR, &reg);
+	reg = rt2x00mmio_register_read(rt2x00dev, E2PROM_CSR);
 
 	eeprom->reg_data_in = !!rt2x00_get_field32(reg, E2PROM_CSR_DATA_IN);
 	eeprom->reg_data_out = !!rt2x00_get_field32(reg, E2PROM_CSR_DATA_OUT);
@@ -126,7 +126,7 @@ static int rt2800pci_read_eeprom_pci(struct rt2x00_dev *rt2x00dev)
 	struct eeprom_93cx6 eeprom;
 	u32 reg;
 
-	rt2x00mmio_register_read(rt2x00dev, E2PROM_CSR, &reg);
+	reg = rt2x00mmio_register_read(rt2x00dev, E2PROM_CSR);
 
 	eeprom.data = rt2x00dev;
 	eeprom.register_read = rt2800pci_eepromregister_read;
