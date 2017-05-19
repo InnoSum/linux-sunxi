@@ -193,7 +193,7 @@ static u8 rt2800_rfcsr_read(struct rt2x00_dev *rt2x00dev,
 		WAIT_FOR_RFCSR(rt2x00dev, &reg);
 	}
 
-	*value = rt2x00_get_field32(reg, RF_CSR_CFG_DATA);
+	value = rt2x00_get_field32(reg, RF_CSR_CFG_DATA);
 
 	mutex_unlock(&rt2x00dev->csr_mutex);
 }
