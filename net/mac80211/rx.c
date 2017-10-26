@@ -897,8 +897,8 @@ ieee80211_rx_h_check(struct ieee80211_rx_data *rx)
 
 		if (rx->sdata->vif.type == NL80211_IFTYPE_AP &&
 		    cfg80211_rx_spurious_frame(rx->sdata->dev,
-					       hdr->addr2,
-					       GFP_ATOMIC))
+					hdr->addr2,
+					GFP_ATOMIC))
 			return RX_DROP_UNUSABLE;
 
 		return RX_DROP_MONITOR;
@@ -1153,7 +1153,7 @@ static void ap_sta_ps_start(struct sta_info *sta)
 		drv_sta_notify(local, sdata, STA_NOTIFY_SLEEP, &sta->sta);
 #ifdef CONFIG_MAC80211_VERBOSE_PS_DEBUG
 	printk(KERN_DEBUG "%s: STA %pM aid %d enters power save mode\n",
-	       sdata->name, sta->sta.addr, sta->sta.aid);
+	sdata->name, sta->sta.addr, sta->sta.aid);
 #endif /* CONFIG_MAC80211_VERBOSE_PS_DEBUG */
 }
 
@@ -1161,13 +1161,13 @@ static void ap_sta_ps_end(struct sta_info *sta)
 {
 #ifdef CONFIG_MAC80211_VERBOSE_PS_DEBUG
 	printk(KERN_DEBUG "%s: STA %pM aid %d exits power save mode\n",
-	       sta->sdata->name, sta->sta.addr, sta->sta.aid);
+	sta->sdata->name, sta->sta.addr, sta->sta.aid);
 #endif /* CONFIG_MAC80211_VERBOSE_PS_DEBUG */
 
 	if (test_sta_flag(sta, WLAN_STA_PS_DRIVER)) {
 #ifdef CONFIG_MAC80211_VERBOSE_PS_DEBUG
 		printk(KERN_DEBUG "%s: STA %pM aid %d driver-ps-blocked\n",
-		       sta->sdata->name, sta->sta.addr, sta->sta.aid);
+		sta->sdata->name, sta->sta.addr, sta->sta.aid);
 #endif /* CONFIG_MAC80211_VERBOSE_PS_DEBUG */
 		return;
 	}
@@ -1403,11 +1403,11 @@ ieee80211_reassemble_add(struct ieee80211_sub_if_data *sdata,
 		struct ieee80211_hdr *hdr =
 			(struct ieee80211_hdr *) entry->skb_list.next->data;
 		printk(KERN_DEBUG "%s: RX reassembly removed oldest "
-		       "fragment entry (idx=%d age=%lu seq=%d last_frag=%d "
-		       "addr1=%pM addr2=%pM\n",
-		       sdata->name, idx,
-		       jiffies - entry->first_frag_time, entry->seq,
-		       entry->last_frag, hdr->addr1, hdr->addr2);
+		"fragment entry (idx=%d age=%lu seq=%d last_frag=%d "
+		"addr1=%pM addr2=%pM\n",
+		sdata->name, idx,
+		jiffies - entry->first_frag_time, entry->seq,
+		entry->last_frag, hdr->addr1, hdr->addr2);
 #endif
 		__skb_queue_purge(&entry->skb_list);
 	}
@@ -1519,8 +1519,8 @@ ieee80211_rx_h_defragment(struct ieee80211_rx_data *rx)
 			 * fragment has a sequential PN value. */
 			entry->ccmp = 1;
 			memcpy(entry->last_pn,
-			       rx->key->u.ccmp.rx_pn[queue],
-			       CCMP_PN_LEN);
+			rx->key->u.ccmp.rx_pn[queue],
+			CCMP_PN_LEN);
 		}
 		return RX_QUEUED;
 	}
@@ -1773,7 +1773,7 @@ ieee80211_deliver_skb(struct ieee80211_rx_data *rx)
 			xmit_skb = skb_copy(skb, GFP_ATOMIC);
 			if (!xmit_skb && net_ratelimit())
 				printk(KERN_DEBUG "%s: failed to clone "
-				       "multicast frame\n", dev->name);
+				"multicast frame\n", dev->name);
 		} else {
 			dsta = sta_info_get(sdata, skb->data);
 			if (dsta) {
@@ -2197,8 +2197,8 @@ static void ieee80211_process_sa_query_req(struct ieee80211_sub_if_data *sdata,
 	resp->u.action.category = WLAN_CATEGORY_SA_QUERY;
 	resp->u.action.u.sa_query.action = WLAN_ACTION_SA_QUERY_RESPONSE;
 	memcpy(resp->u.action.u.sa_query.trans_id,
-	       mgmt->u.action.u.sa_query.trans_id,
-	       WLAN_SA_QUERY_TR_ID_LEN);
+	mgmt->u.action.u.sa_query.trans_id,
+	WLAN_SA_QUERY_TR_ID_LEN);
 
 	ieee80211_tx_skb(sdata, skb);
 }
@@ -2528,7 +2528,7 @@ ieee80211_rx_h_action_return(struct ieee80211_rx_data *rx)
 		return RX_DROP_UNUSABLE;
 
 	nskb = skb_copy_expand(rx->skb, local->hw.extra_tx_headroom, 0,
-			       GFP_ATOMIC);
+			GFP_ATOMIC);
 	if (nskb) {
 		struct ieee80211_mgmt *nmgmt = (void *)nskb->data;
 
@@ -2868,7 +2868,7 @@ static int prepare_for_handlers(struct ieee80211_rx_data *rx,
 	case NL80211_IFTYPE_MESH_POINT:
 		if (!multicast &&
 		    compare_ether_addr(sdata->vif.addr,
-				       hdr->addr1) != 0) {
+				hdr->addr1) != 0) {
 			if (!(sdata->dev->flags & IFF_PROMISC))
 				return 0;
 
@@ -2879,7 +2879,7 @@ static int prepare_for_handlers(struct ieee80211_rx_data *rx,
 	case NL80211_IFTYPE_AP:
 		if (!bssid) {
 			if (compare_ether_addr(sdata->vif.addr,
-					       hdr->addr1))
+					hdr->addr1))
 				return 0;
 		} else if (!ieee80211_bssid_match(bssid,
 					sdata->vif.addr)) {
@@ -2897,6 +2897,27 @@ static int prepare_for_handlers(struct ieee80211_rx_data *rx,
 				return 0;
 			status->rx_flags &= ~IEEE80211_RX_RA_MATCH;
 		}
+
+		/*
+		 * 802.11-2016 Table 9-26 says that for data frames, A1 must be
+		 * the BSSID - we've checked that already but may have accepted
+		 * the wildcard (ff:ff:ff:ff:ff:ff).
+		 *
+		 * It also says:
+		 *      The BSSID of the Data frame is determined as follows:
+		 *      a) If the STA is contained within an AP or is associated
+		 *  with an AP, the BSSID is the address currently in use
+		 *  by the STA contained in the AP.
+		 *
+		 * So we should not accept data frames with an address that's
+		 * multicast.
+		 *
+		 * Accepting it also opens a security problem because stations
+		 * could encrypt it with the GTK and inject traffic that way.
+		 */
+		if (ieee80211_is_data(hdr->frame_control) && multicast)
+			return 0;
+
 		break;
 	case NL80211_IFTYPE_WDS:
 		if (bssid || !ieee80211_is_data(hdr->frame_control))
