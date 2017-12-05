@@ -215,7 +215,7 @@ static s32 clock_init(struct sw_hci_hcd *sw_hci, u32 ohci)
 		sw_hci->sie_clk =
 		    clk_get(NULL, usbc_ahb_ohci_name[sw_hci->usbc_no]);
 		if (IS_ERR(sw_hci->sie_clk)) {
-			DMSG_PANIC("ERR: get ohci%d abh clk failed.\n",
+			DMSG_PANIC("ERR: get ohci%d ahb clk failed.\n",
 				   (sw_hci->usbc_no));
 			goto failed;
 		}
@@ -231,7 +231,7 @@ static s32 clock_init(struct sw_hci_hcd *sw_hci, u32 ohci)
 		sw_hci->sie_clk =
 		    clk_get(NULL, usbc_ahb_ehci_name[sw_hci->usbc_no]);
 		if (IS_ERR(sw_hci->sie_clk)) {
-			DMSG_PANIC("ERR: get ehci%d abh clk failed.\n",
+			DMSG_PANIC("ERR: get ehci%d ahb clk failed.\n",
 				   (sw_hci->usbc_no));
 			goto failed;
 		}
