@@ -1,0 +1,12 @@
+--- net/mac80211/key.c
++++ net/mac80211/key.c
+@@ -530,8 +563,7 @@ int ieee80211_key_link(struct ieee80211_key *key,
+ 	 * Silently accept key re-installation without really installing the
+ 	 * new version of the key to avoid nonce reuse or replay issues.
+ 	 */
+-	if (old_key && key->conf.keylen == old_key->conf.keylen &&
+-	    !memcmp(key->conf.key, old_key->conf.key, key->conf.keylen)) {
++	if (ieee80211_key_identical(sdata, old_key, key)) {
+ 		__ieee80211_key_free(key);
+ 		ret = 0;
+ 		goto out;
