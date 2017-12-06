@@ -73,8 +73,7 @@ struct ieee80211_local;
  * possible additional powersavings. Implicitly depending on driver autotrigger
  * frame support doesn't make much sense.
  */
-#define IEEE80211_DEFAULT_UAPSD_QUEUES \
-	IEEE80211_WMM_IE_STA_QOSINFO_AC_VO
+#define IEEE80211_DEFAULT_UAPSD_QUEUES 0
 
 #define IEEE80211_DEFAULT_MAX_SP_LEN		\
 	IEEE80211_WMM_IE_STA_QOSINFO_SP_ALL
