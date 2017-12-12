@@ -91,10 +91,6 @@ struct ieee80211_fragment_entry {
 
 
 struct ieee80211_bss {
-	/* don't want to look up all the time */
-	size_t ssid_len;
-	u8 ssid[IEEE80211_MAX_SSID_LEN];
-
 	u8 dtim_period;
 
 	bool wmm_used;
