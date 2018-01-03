@@ -76,6 +76,12 @@
  */
 #define CRYPTO_ALG_INSTANCE		0x00000800
 
+/*
+ * Set if the algorithm has a ->setkey() method but can be used without
+ * calling it first, i.e. there is a default key.
+ */
+#define CRYPTO_ALG_OPTIONAL_KEY		0x00004000
+
 /* Set this bit if the algorithm provided is hardware accelerated but
  * not available to userspace via instruction set or so.
  */
