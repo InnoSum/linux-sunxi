@@ -214,7 +214,6 @@ static int usb_parse_endpoint(struct device *ddev, int cfgno, int inum,
 				dev_warn(ddev, "config %d interface %d altsetting %d has a duplicate endpoint with address 0x%X, skipping\n",
 					cfgno, inum, asnum, d->bEndpointAddress);
 				goto skip_to_next_endpoint_or_interface_descriptor;
-			}
 		}
 	}
 
