@@ -1339,6 +1339,17 @@ static int proc_do_submiturb(struct dev_state *ps, struct usbdevfs_urb *uurb,
 		as->urb->interval = 1 << min(15, ep->desc.bInterval - 1);
 	else
 		as->urb->interval = ep->desc.bInterval;
+
+	if (ep->desc.bInterval) {
+		if (uurb->type == USBDEVFS_URB_TYPE_ISO ||
+			ps->dev->speed == USB_SPEED_HIGH ||
+			ps->dev->speed >= USB_SPEED_SUPER)
+		as->urb->interval = 1 <<
+			min(15, ep->desc.bInterval - 1);
+		else
+			as->urb->interval = ep->desc.bInterval;
+	}
+
 	as->urb->context = as;
 	as->urb->complete = async_completed;
 	for (totlen = u = 0; u < uurb->number_of_packets; u++) {
