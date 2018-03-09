@@ -1326,7 +1326,7 @@ static unsigned int tcp_mss_split_point(const struct sock *sk, const struct sk_b
 	u32 needed, window, cwnd_len;
 
 	window = tcp_wnd_end(tp) - TCP_SKB_CB(skb)->seq;
-	max_len = mss_now * cwnd;
+	cwnd_len = mss_now * cwnd;
 
 	if (likely(cwnd_len <= window && skb != tcp_write_queue_tail(sk)))
 		return cwnd_len;
