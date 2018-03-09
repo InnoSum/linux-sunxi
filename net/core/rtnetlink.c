@@ -1863,6 +1863,7 @@ replay:
 			} else {
 				unregister_netdevice(dev);
 			}
+		}
 out:
 		put_net(dest_net);
 		return err;
