@@ -117,6 +117,8 @@ struct ipv6hdr;
  */
 static inline int IP6_ECN_set_ce(struct sk_buff *skb, struct ipv6hdr *iph)
 {
+	__be32 from, to;
+
 	if (INET_ECN_is_not_ect(ipv6_get_dsfield(iph)))
 		return 0;
 
