@@ -55,7 +55,6 @@ struct ieee80211_local;
 #define TU_TO_EXP_TIME(x)	(jiffies + usecs_to_jiffies((x) * 1024))
 
 /*
-<<<<<<< HEAD
  * Some APs experience problems when working with U-APSD. Decreasing the
  * probability of that happening by using legacy mode for all ACs but VO isn't
  * enough.
