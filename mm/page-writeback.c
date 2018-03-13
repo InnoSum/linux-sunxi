@@ -665,7 +665,7 @@ static unsigned long bdi_position_ratio(struct backing_dev_info *bdi,
 	 */
 	setpoint = (freerun + limit) / 2;
 	x = div_s64((setpoint - dirty) << RATELIMIT_CALC_SHIFT,
-		    limit - setpoint + 1);
+		    (limit - setpoint) | 1);
 	pos_ratio = x;
 	pos_ratio = pos_ratio * x >> RATELIMIT_CALC_SHIFT;
 	pos_ratio = pos_ratio * x >> RATELIMIT_CALC_SHIFT;
@@ -731,7 +731,7 @@ static unsigned long bdi_position_ratio(struct backing_dev_info *bdi,
 
 	if (bdi_dirty < x_intercept - span / 4) {
 		pos_ratio = div_u64(pos_ratio * (x_intercept - bdi_dirty),
-				    x_intercept - bdi_setpoint + 1);
+				    (x_intercept - bdi_setpoint) | 1);
 	} else
 		pos_ratio /= 4;
 
