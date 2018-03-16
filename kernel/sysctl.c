@@ -1553,6 +1553,7 @@ static struct ctl_table fs_table[] = {
 		.maxlen		= sizeof(pipe_user_pages_soft),
 		.mode		= 0644,
 		.proc_handler	= proc_doulongvec_minmax,
+	},
 	{ }
 };
 
