@@ -3065,6 +3065,19 @@ static void irqtime_account_process_tick(struct task_struct *p, int user_tick,
 						struct rq *rq) {}
 #endif /* CONFIG_IRQ_TIME_ACCOUNTING */
 
+static inline void account_reset_rq(struct rq *rq)
+{
+#ifdef CONFIG_IRQ_TIME_ACCOUNTING
+	rq->prev_irq_time = 0;
+#endif
+#ifdef CONFIG_PARAVIRT
+	rq->prev_steal_time = 0;
+#endif
+#ifdef CONFIG_PARAVIRT_TIME_ACCOUNTING
+	rq->prev_steal_time_rq = 0;
+#endif
+}
+
 /*
  * Account a single tick of cpu time.
  * @p: the process that the cpu time gets accounted to
@@ -5612,6 +5625,7 @@ migration_call(struct notifier_block *nfb, unsigned long action, void *hcpu)
 
 	case CPU_UP_PREPARE:
 		rq->calc_load_update = calc_load_update;
+		account_reset_rq(rq);
 		break;
 
 	case CPU_ONLINE:
