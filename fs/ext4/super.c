@@ -3251,7 +3251,7 @@ static int ext4_fill_super(struct super_block *sb, void *data, int silent)
 		if (!s_mount_opts)
 			goto failed_mount;
 		if (!parse_options(s_mount_opts, sb, &journal_devnum,
-				   &journal_ioprio, NULL, 0)) {
+				   &journal_ioprio, 0)) {
 			ext4_msg(sb, KERN_WARNING,
 				 "failed to parse options in superblock: %s",
 				 s_mount_opts);
