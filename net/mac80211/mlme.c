@@ -785,7 +785,7 @@ static void ieee80211_chswitch_timer(unsigned long data)
 }
 
 void ieee80211_sta_process_chanswitch(struct ieee80211_sub_if_data *sdata,
-				      struct ieee80211_channel_sw_ie *sw_elem,
+				      const struct ieee80211_channel_sw_ie *sw_elem,
 				      struct ieee80211_bss *bss,
 				      u64 timestamp)
 {
@@ -1172,13 +1172,14 @@ void ieee80211_dynamic_ps_timer(unsigned long data)
 /* MLME */
 static void ieee80211_sta_wmm_params(struct ieee80211_local *local,
 				     struct ieee80211_sub_if_data *sdata,
-				     u8 *wmm_param, size_t wmm_param_len)
+				     const u8 *wmm_param, size_t wmm_param_len)
 {
 	struct ieee80211_tx_queue_params params;
 	struct ieee80211_if_managed *ifmgd = &sdata->u.mgd;
 	size_t left;
 	int count;
-	u8 *pos, uapsd_queues = 0;
+	const u8 *pos;
+	u8 uapsd_queues = 0;
 
 	if (!local->ops->conf_tx)
 		return;

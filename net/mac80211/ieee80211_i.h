@@ -1134,38 +1134,38 @@ struct ieee80211_ra_tid {
 
 /* Parsed Information Elements */
 struct ieee802_11_elems {
-	u8 *ie_start;
+	const u8 *ie_start;
 	size_t total_len;
 
 	/* pointers to IEs */
-	u8 *ssid;
-	u8 *supp_rates;
-	u8 *fh_params;
-	u8 *ds_params;
-	u8 *cf_params;
-	struct ieee80211_tim_ie *tim;
-	u8 *ibss_params;
-	u8 *challenge;
-	u8 *wpa;
-	u8 *rsn;
-	u8 *erp_info;
-	u8 *ext_supp_rates;
-	u8 *wmm_info;
-	u8 *wmm_param;
-	struct ieee80211_ht_cap *ht_cap_elem;
-	struct ieee80211_ht_info *ht_info_elem;
-	struct ieee80211_meshconf_ie *mesh_config;
-	u8 *mesh_id;
-	u8 *peering;
-	u8 *preq;
-	u8 *prep;
-	u8 *perr;
-	struct ieee80211_rann_ie *rann;
-	u8 *ch_switch_elem;
-	u8 *country_elem;
-	u8 *pwr_constr_elem;
-	u8 *quiet_elem;	/* first quite element */
-	u8 *timeout_int;
+	const u8 *ssid;
+	const u8 *supp_rates;
+	const u8 *fh_params;
+	const u8 *ds_params;
+	const u8 *cf_params;
+	const struct ieee80211_tim_ie *tim;
+	const u8 *ibss_params;
+	const u8 *challenge;
+	const u8 *wpa;
+	const u8 *rsn;
+	const u8 *erp_info;
+	const u8 *ext_supp_rates;
+	const u8 *wmm_info;
+	const u8 *wmm_param;
+	const struct ieee80211_ht_cap *ht_cap_elem;
+	const struct ieee80211_ht_info *ht_info_elem;
+	const struct ieee80211_meshconf_ie *mesh_config;
+	const u8 *mesh_id;
+	const u8 *peering;
+	const u8 *preq;
+	const u8 *prep;
+	const u8 *perr;
+	const struct ieee80211_rann_ie *rann;
+	const u8 *ch_switch_elem;
+	const u8 *country_elem;
+	const u8 *pwr_constr_elem;
+	const u8 *quiet_elem;	/* first quite element */
+	const u8 *timeout_int;
 
 	/* length of them, respectively */
 	u8 ssid_len;
@@ -1236,7 +1236,7 @@ int ieee80211_max_network_latency(struct notifier_block *nb,
 				  unsigned long data, void *dummy);
 int ieee80211_set_arp_filter(struct ieee80211_sub_if_data *sdata);
 void ieee80211_sta_process_chanswitch(struct ieee80211_sub_if_data *sdata,
-				      struct ieee80211_channel_sw_ie *sw_elem,
+				      const struct ieee80211_channel_sw_ie *sw_elem,
 				      struct ieee80211_bss *bss,
 				      u64 timestamp);
 void ieee80211_sta_quiesce(struct ieee80211_sub_if_data *sdata);
@@ -1340,7 +1340,7 @@ void ieee80211_apply_htcap_overrides(struct ieee80211_sub_if_data *sdata,
 				     struct ieee80211_sta_ht_cap *ht_cap);
 void ieee80211_ht_cap_ie_to_sta_ht_cap(struct ieee80211_sub_if_data *sdata,
 				       struct ieee80211_supported_band *sband,
-				       struct ieee80211_ht_cap *ht_cap_ie,
+				       const struct ieee80211_ht_cap *ht_cap_ie,
 				       struct ieee80211_sta_ht_cap *ht_cap);
 void ieee80211_send_delba(struct ieee80211_sub_if_data *sdata,
 			  const u8 *da, u16 tid,
@@ -1475,7 +1475,7 @@ void ieee80211_add_pending_skbs_fn(struct ieee80211_local *local,
 
 void ieee80211_send_auth(struct ieee80211_sub_if_data *sdata,
 			 u16 transaction, u16 auth_alg,
-			 u8 *extra, size_t extra_len, const u8 *bssid,
+			 const u8 *extra, size_t extra_len, const u8 *bssid,
 			 const u8 *da, const u8 *key, u8 key_len, u8 key_idx);
 int ieee80211_build_preq_ies(struct ieee80211_local *local, u8 *buffer,
 			     const u8 *ie, size_t ie_len,

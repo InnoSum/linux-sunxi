@@ -923,7 +923,7 @@ u32 ieee80211_mandatory_rates(struct ieee80211_local *local,
 
 void ieee80211_send_auth(struct ieee80211_sub_if_data *sdata,
 			 u16 transaction, u16 auth_alg,
-			 u8 *extra, size_t extra_len, const u8 *da,
+			 const u8 *extra, size_t extra_len, const u8 *da,
 			 const u8 *bssid, const u8 *key, u8 key_len, u8 key_idx)
 {
 	struct ieee80211_local *local = sdata->local;
