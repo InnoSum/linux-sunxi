@@ -1,6 +1,6 @@
 # This is the "world" regulatory domain
 country 00:
-	# Channel 1 - 11.
+	# Channel 1 - 13.
 	(2402 - 2472 @ 40), (3, 20)
 	# Channel 12 - 13.
 	(2457 - 2482 @ 40), (3, 20), NO-IR
