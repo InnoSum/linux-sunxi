@@ -174,7 +174,7 @@ static bool rt2800usb_tx_sta_fifo_read_completed(struct rt2x00_dev *rt2x00dev,
 	bool valid;
 
 	if (urb_status) {
-		rt2x00_warn(rt2x00dev, "TX status read failed %d\n",
+		rt2x00_dbg(rt2x00dev, "TX status read failed %d\n",
 			    urb_status);
 
 		goto stop_reading;
@@ -183,7 +183,7 @@ static bool rt2800usb_tx_sta_fifo_read_completed(struct rt2x00_dev *rt2x00dev,
 	valid = rt2x00_get_field32(tx_status, TX_STA_FIFO_VALID);
 	if (valid) {
 		if (!kfifo_put(&rt2x00dev->txstatus_fifo, tx_status))
-			rt2x00_warn(rt2x00dev, "TX status FIFO overrun\n");
+			rt2x00_dbg(rt2x00dev, "TX status FIFO overrun\n");
 
 		queue_work(rt2x00dev->workqueue, &rt2x00dev->txdone_work);
 
@@ -596,7 +596,7 @@ static void rt2800usb_txdone(struct rt2x00_dev *rt2x00dev)
 
 		if (unlikely(test_bit(ENTRY_OWNER_DEVICE_DATA, &entry->flags) ||
 			     !test_bit(ENTRY_DATA_STATUS_PENDING, &entry->flags))) {
-			rt2x00_warn(rt2x00dev, "Data pending for entry %u in queue %u\n",
+			rt2x00_dbg(rt2x00dev, "Data pending for entry %u in queue %u\n",
 				    entry->entry_idx, qid);
 			break;
 		}
