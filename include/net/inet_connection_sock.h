@@ -237,7 +237,7 @@ static inline void inet_csk_reset_xmit_timer(struct sock *sk, const int what,
 #endif
 }
 
-extern struct sock *inet_csk_accept(struct sock *sk, int flags, int *err);
+extern struct sock *inet_csk_accept(struct sock *sk, int flags, int *err, bool kern);
 
 extern struct request_sock *inet_csk_search_req(const struct sock *sk,
 						struct request_sock ***prevp,

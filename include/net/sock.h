@@ -195,6 +195,7 @@ struct cg_proto;
   *	@sk_shutdown: mask of %SEND_SHUTDOWN and/or %RCV_SHUTDOWN
   *	@sk_userlocks: %SO_SNDBUF and %SO_RCVBUF settings
   *	@sk_lock:	synchronizer
+  *	@sk_kern_sock: True if sock is using kernel lock classes
   *	@sk_rcvbuf: size of receive buffer in bytes
   *	@sk_wq: sock wait queue and async head
   *	@sk_dst_cache: destination cache
@@ -324,6 +325,7 @@ struct sock {
 	struct sk_buff_head	sk_write_queue;
 	kmemcheck_bitfield_begin(flags);
 	unsigned int		sk_shutdown  : 2,
+				sk_kern_sock : 1,
 				sk_no_check  : 2,
 				sk_userlocks : 4,
 				sk_protocol  : 8,
@@ -816,7 +818,8 @@ struct proto {
 					int addr_len);
 	int			(*disconnect)(struct sock *sk, int flags);
 
-	struct sock *		(*accept) (struct sock *sk, int flags, int *err);
+	struct sock *		(*accept) (struct sock *sk, int flags, int *err,
+					   bool kern);
 
 	int			(*ioctl)(struct sock *sk, int cmd,
 					 unsigned long arg);
@@ -1446,7 +1449,7 @@ extern int                      sock_no_connect(struct socket *,
 extern int                      sock_no_socketpair(struct socket *,
 						   struct socket *);
 extern int                      sock_no_accept(struct socket *,
-					       struct socket *, int);
+					       struct socket *, int, bool);
 extern int                      sock_no_getname(struct socket *,
 						struct sockaddr *, int *, int);
 extern unsigned int             sock_no_poll(struct file *, struct socket *,

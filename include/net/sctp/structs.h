@@ -646,7 +646,8 @@ struct sctp_pf {
 	int  (*send_verify) (struct sctp_sock *, union sctp_addr *);
 	int  (*supported_addrs)(const struct sctp_sock *, __be16 *);
 	struct sock *(*create_accept_sk) (struct sock *sk,
-					  struct sctp_association *asoc);
+					  struct sctp_association *asoc,
+					  bool kern);
 	void (*addr_v4map) (struct sctp_sock *, union sctp_addr *);
 	struct sctp_af *af;
 };

@@ -1505,7 +1505,8 @@ static int listen(struct socket *sock, int len)
  * Returns 0 on success, errno otherwise
  */
 
-static int accept(struct socket *sock, struct socket *new_sock, int flags)
+static int accept(struct socket *sock, struct socket *new_sock, int flags,
+		  bool kern)
 {
 	struct sock *sk = sock->sk;
 	struct sk_buff *buf;
@@ -1533,7 +1534,7 @@ static int accept(struct socket *sock, struct socket *new_sock, int flags)
 
 	buf = skb_peek(&sk->sk_receive_queue);
 
-	res = tipc_create(sock_net(sock->sk), new_sock, 0, 0);
+	res = tipc_create(sock_net(sock->sk), new_sock, 0, kern);
 	if (!res) {
 		struct sock *new_sk = new_sock->sk;
 		struct tipc_sock *new_tsock = tipc_sk(new_sk);
