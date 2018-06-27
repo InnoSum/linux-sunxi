@@ -1199,7 +1199,7 @@ EXPORT_SYMBOL_GPL(sock_update_netprioidx);
  *	@prot: struct proto associated with this new sock instance
  */
 struct sock *sk_alloc(struct net *net, int family, gfp_t priority,
-		      struct proto *prot)
+		      struct proto *prot, bool kern)
 {
 	struct sock *sk;
 

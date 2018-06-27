@@ -1136,7 +1136,7 @@ static int tun_set_iff(struct net *net, struct file *file, struct ifreq *ifr)
 		set_bit(SOCK_EXTERNALLY_ALLOCATED, &tun->socket.flags);
 
 		err = -ENOMEM;
-		sk = sk_alloc(&init_net, AF_UNSPEC, GFP_KERNEL, &tun_proto);
+		sk = sk_alloc(&init_net, AF_UNSPEC, GFP_KERNEL, &tun_proto, 0);
 		if (!sk)
 			goto err_free_dev;
 

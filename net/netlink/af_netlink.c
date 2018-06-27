@@ -409,14 +409,15 @@ static struct proto netlink_proto = {
 };
 
 static int __netlink_create(struct net *net, struct socket *sock,
-			    struct mutex *cb_mutex, int protocol)
+			    struct mutex *cb_mutex, int protocol,
+			    bool kern)
 {
 	struct sock *sk;
 	struct netlink_sock *nlk;
 
 	sock->ops = &netlink_ops;
 
-	sk = sk_alloc(net, PF_NETLINK, GFP_KERNEL, &netlink_proto);
+	sk = sk_alloc(net, PF_NETLINK, GFP_KERNEL, &netlink_proto, kern);
 	if (!sk)
 		return -ENOMEM;
 
@@ -471,7 +472,7 @@ static int netlink_create(struct net *net, struct socket *sock, int protocol,
 	if (err < 0)
 		goto out;
 
-	err = __netlink_create(net, sock, cb_mutex, protocol);
+	err = __netlink_create(net, sock, cb_mutex, protocol, kern);
 	if (err < 0)
 		goto out_module;
 
@@ -1523,7 +1524,7 @@ netlink_kernel_create(struct net *net, int unit, unsigned int groups,
 	 * So we create one inside init_net and the move it to net.
 	 */
 
-	if (__netlink_create(&init_net, sock, cb_mutex, unit) < 0)
+	if (__netlink_create(&init_net, sock, cb_mutex, unit, 1) < 0)
 		goto out_sock_release_nosk;
 
 	sk = sock->sk;
