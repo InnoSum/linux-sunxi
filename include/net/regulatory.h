@@ -70,7 +70,7 @@ enum environment_cap {
 struct regulatory_request {
 	int wiphy_idx;
 	enum nl80211_reg_initiator initiator;
-	char alpha2[2];
+	char alpha2[3];
 	u8 dfs_region;
 	bool intersect;
 	bool processed;
