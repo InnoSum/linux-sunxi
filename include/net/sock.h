@@ -1393,7 +1393,8 @@ static inline void unlock_sock_fast(struct sock *sk, bool slow)
 
 extern struct sock		*sk_alloc(struct net *net, int family,
 					  gfp_t priority,
-					  struct proto *prot);
+					  struct proto *prot,
+					  bool kern);
 extern void			sk_free(struct sock *sk);
 extern void			sk_release_kernel(struct sock *sk);
 extern struct sock		*sk_clone_lock(const struct sock *sk,
