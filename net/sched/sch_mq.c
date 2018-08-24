@@ -42,6 +42,7 @@ static int mq_init(struct Qdisc *sch, struct nlattr *opt)
 	struct netdev_queue *dev_queue;
 	struct Qdisc *qdisc;
 	unsigned int ntx;
+	const struct Qdisc_ops *ops = default_qdisc_ops;
 
 	if (sch->parent != TC_H_ROOT)
 		return -EOPNOTSUPP;
