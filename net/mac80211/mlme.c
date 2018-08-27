@@ -177,7 +177,7 @@ static int ecw2cw(int ecw)
  * HT abilities for a specific band.
  */
 static u32 ieee80211_enable_ht(struct ieee80211_sub_if_data *sdata,
-			       struct ieee80211_ht_operation *hti,
+			       struct ieee80211_ht_operation *ht_oper,
 			       const u8 *bssid, u16 ap_ht_cap_flags,
 			       bool beacon_htcap_ie)
 {
@@ -196,8 +196,8 @@ static u32 ieee80211_enable_ht(struct ieee80211_sub_if_data *sdata,
 	prev_chantype = sdata->vif.bss_conf.channel_type;
 
 
-	ht_cfreq = ieee80211_channel_to_frequency(hti->primary_chan,
-						   sband->band);
+	ht_cfreq = ieee80211_channel_to_frequency(ht_oper->primary_chan,
+						  sband->band);
 	/* check that channel matches the right operating channel */
 	if (local->hw.conf.channel->center_freq != ht_cfreq) {
 		/* Some APs mess this up, evidently.
@@ -207,11 +207,11 @@ static u32 ieee80211_enable_ht(struct ieee80211_sub_if_data *sdata,
 		printk(KERN_DEBUG
 		       "%s: Wrong control channel in association"
 		       " response: configured center-freq: %d"
-		       " hti-cfreq: %d  hti->primary_chan: %d"
+		       " ht-cfreq: %d  ht->primary_chan: %d"
 		       " band: %d.  Disabling HT.\n",
 		       sdata->name,
 		       local->hw.conf.channel->center_freq,
-		       ht_cfreq, hti->primary_chan,
+		       ht_cfreq, ht_oper->primary_chan,
 		       sband->band);
 		enable_ht = false;
 	}
@@ -222,10 +222,8 @@ static u32 ieee80211_enable_ht(struct ieee80211_sub_if_data *sdata,
 		if (!(ap_ht_cap_flags & IEEE80211_HT_CAP_40MHZ_INTOLERANT) &&
 		    !ieee80111_cfg_override_disables_ht40(sdata) &&
 		    (sband->ht_cap.cap & IEEE80211_HT_CAP_SUP_WIDTH_20_40) &&
-		    (ht_operation->ht_param & IEEE80211_HT_PARAM_CHAN_WIDTH_ANY)) {
-			switch(ht_operation->ht_param & IEEE80211_HT_PARAM_CHA_SEC_OFFSET) {
-			switch (ht_operation->ht_param &
-				IEEE80211_HT_PARAM_CHA_SEC_OFFSET) {
+		    (ht_oper->ht_param & IEEE80211_HT_PARAM_CHAN_WIDTH_ANY)) {
+			switch (ht_oper->ht_param & IEEE80211_HT_PARAM_CHA_SEC_OFFSET) {
 			case IEEE80211_HT_PARAM_CHA_SEC_ABOVE:
 				rx_channel_type = NL80211_CHAN_HT40PLUS;
 				break;
