@@ -222,9 +222,9 @@ static u32 ieee80211_enable_ht(struct ieee80211_sub_if_data *sdata,
 		if (!(ap_ht_cap_flags & IEEE80211_HT_CAP_40MHZ_INTOLERANT) &&
 		    !ieee80111_cfg_override_disables_ht40(sdata) &&
 		    (sband->ht_cap.cap & IEEE80211_HT_CAP_SUP_WIDTH_20_40) &&
-		    (ht_opera->ht_param & IEEE80211_HT_PARAM_CHAN_WIDTH_ANY)) {
-			switch(ht_oper->ht_param & IEEE80211_HT_PARAM_CHA_SEC_OFFSET) {
-			switch (ht_oper->ht_param &
+		    (ht_operation->ht_param & IEEE80211_HT_PARAM_CHAN_WIDTH_ANY)) {
+			switch(ht_operation->ht_param & IEEE80211_HT_PARAM_CHA_SEC_OFFSET) {
+			switch (ht_operation->ht_param &
 				IEEE80211_HT_PARAM_CHA_SEC_OFFSET) {
 			case IEEE80211_HT_PARAM_CHA_SEC_ABOVE:
 				rx_channel_type = NL80211_CHAN_HT40PLUS;
