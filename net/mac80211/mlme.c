@@ -196,7 +196,7 @@ static u32 ieee80211_enable_ht(struct ieee80211_sub_if_data *sdata,
 	prev_chantype = sdata->vif.bss_conf.channel_type;
 
 
-	ht_cfreq = ieee80211_channel_to_frequency(hti->control_chan,
+	ht_cfreq = ieee80211_channel_to_frequency(hti->primary_chan,
 						   sband->band);
 	/* check that channel matches the right operating channel */
 	if (local->hw.conf.channel->center_freq != ht_cfreq) {
@@ -207,11 +207,11 @@ static u32 ieee80211_enable_ht(struct ieee80211_sub_if_data *sdata,
 		printk(KERN_DEBUG
 		       "%s: Wrong control channel in association"
 		       " response: configured center-freq: %d"
-		       " hti-cfreq: %d  hti->control_chan: %d"
+		       " hti-cfreq: %d  hti->primary_chan: %d"
 		       " band: %d.  Disabling HT.\n",
 		       sdata->name,
 		       local->hw.conf.channel->center_freq,
-		       ht_cfreq, hti->control_chan,
+		       ht_cfreq, hti->primary_chan,
 		       sband->band);
 		enable_ht = false;
 	}
