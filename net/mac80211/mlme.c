@@ -196,11 +196,6 @@ static u32 ieee80211_config_ht_tx(struct ieee80211_sub_if_data *sdata,
 		break;
 	}
 
-	if (WARN_ON_ONCE(channel_type == NL80211_CHAN_NO_HT))
-		return 0;
-
-	channel_type = ieee80211_get_tx_channel_type(local, channel_type);
-
 	/* This can change during the lifetime of the BSS */
 	if (!(ht_oper->ht_param & IEEE80211_HT_PARAM_CHAN_WIDTH_ANY))
 		disable_40 = true;
