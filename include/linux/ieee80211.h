@@ -1475,6 +1475,28 @@ enum {
 	IEEE80211_PATH_METRIC_VENDOR = 255,
 };
 
+/**
+ * enum ieee80211_root_mode_identifier - root mesh STA mode identifier
+ *
+ * These attribute are used by dot11MeshHWMPRootMode to set root mesh STA mode
+ *
+ * @IEEE80211_ROOTMODE_NO_ROOT: the mesh STA is not a root mesh STA (default)
+ * @IEEE80211_ROOTMODE_ROOT: the mesh STA is a root mesh STA if greater than
+ *	this value
+ * @IEEE80211_PROACTIVE_PREQ_NO_PREP: the mesh STA is a root mesh STA supports
+ *	the proactive PREQ with proactive PREP subfield set to 0
+ * @IEEE80211_PROACTIVE_PREQ_WITH_PREP: the mesh STA is a root mesh STA
+ *	supports the proactive PREQ with proactive PREP subfield set to 1
+ * @IEEE80211_PROACTIVE_RANN: the mesh STA is a root mesh STA supports
+ *	the proactive RANN
+ */
+enum ieee80211_root_mode_identifier {
+	IEEE80211_ROOTMODE_NO_ROOT = 0,
+	IEEE80211_ROOTMODE_ROOT = 1,
+	IEEE80211_PROACTIVE_PREQ_NO_PREP = 2,
+	IEEE80211_PROACTIVE_PREQ_WITH_PREP = 3,
+	IEEE80211_PROACTIVE_RANN = 4,
+};
 
 /*
  * IEEE 802.11-2007 7.3.2.9 Country information element
