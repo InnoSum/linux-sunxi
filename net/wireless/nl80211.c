@@ -1548,7 +1548,7 @@ static int nl80211_send_iface(struct sk_buff *msg, u32 pid, u32 seq, int flags,
 			if (nla_put_u32(msg, NL80211_ATTR_WIPHY_FREQ,
 					chan->center_freq) ||
 			    nla_put_u32(msg, NL80211_ATTR_WIPHY_CHANNEL_TYPE,
-					channel_type)
+					channel_type))
 				goto nla_put_failure;
 		}
 	}
