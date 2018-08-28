@@ -8330,7 +8330,7 @@ int rt2800_get_survey(struct ieee80211_hw *hw, int idx,
 
 	/* If we return something, that allows limited ACS */
 	survey->filled |= SURVEY_INFO_NOISE_DBM;
-	survey->noise = -127;
+	survey->noise = 0;
 
 	return 0;
 
