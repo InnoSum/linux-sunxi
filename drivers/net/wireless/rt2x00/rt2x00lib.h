@@ -157,15 +157,6 @@ int rt2x00queue_update_beacon(struct rt2x00_dev *rt2x00dev,
 			      struct ieee80211_vif *vif);
 
 /**
- * rt2x00queue_update_beacon_locked - Send new beacon from mac80211
- *	to hardware. Caller needs to ensure locking.
- * @rt2x00dev: Pointer to &struct rt2x00_dev.
- * @vif: Interface for which the beacon should be updated.
- */
-int rt2x00queue_update_beacon_locked(struct rt2x00_dev *rt2x00dev,
-				     struct ieee80211_vif *vif);
-
-/**
  * rt2x00queue_clear_beacon - Clear beacon in hardware
  * @rt2x00dev: Pointer to &struct rt2x00_dev.
  * @vif: Interface for which the beacon should be updated.
