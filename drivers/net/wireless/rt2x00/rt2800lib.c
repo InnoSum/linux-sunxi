@@ -4586,6 +4586,7 @@ void rt2800_vco_calibration(struct rt2x00_dev *rt2x00dev)
 {
 	u32	tx_pin;
 	u8	rfcsr;
+	unsigned long min_sleep = 0;
 
 	/*
 	 * A voltage-controlled oscillator(VCO) is an electronic oscillator
@@ -4623,6 +4624,7 @@ void rt2800_vco_calibration(struct rt2x00_dev *rt2x00dev)
 		rfcsr = rt2800_rfcsr_read(rt2x00dev, 3);
 		rt2x00_set_field8(&rfcsr, RFCSR3_VCOCAL_EN, 1);
 		rt2800_rfcsr_write(rt2x00dev, 3, rfcsr);
+		min_sleep = 1000;
 		break;
 	default:
 		WARN_ONCE(1, "Not supported RF chipet %x for VCO recalibration",
@@ -4630,7 +4632,8 @@ void rt2800_vco_calibration(struct rt2x00_dev *rt2x00dev)
 		return;
 	}
 
-	usleep_range(1000, 1500);
+	if (min_sleep > 0)
+		usleep_range(min_sleep, min_sleep * 2);
 
 	tx_pin = rt2800_register_read(rt2x00dev, TX_PIN_CFG);
 	if (rt2x00dev->rf_channel <= 14) {
