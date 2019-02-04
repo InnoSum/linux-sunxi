@@ -68,7 +68,7 @@ int rt2x00usb_vendor_request(struct rt2x00_dev *rt2x00dev,
 	 * If the port is powered down, we get a -EPROTO error, and this
 	 * leads to a endless loop. So just say that the device is gone.
 	 */
-	if (status == -EPROTO)
+	if (status == -EPROTO || status == -ETIMEDOUT)
 		clear_bit(DEVICE_STATE_PRESENT, &rt2x00dev->flags);
 
 	rt2x00_err(rt2x00dev,
