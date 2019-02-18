@@ -681,6 +681,11 @@ int rt2x00mac_conf_tx(struct ieee80211_hw *hw,
 	struct rt2x00_dev *rt2x00dev = hw->priv;
 	struct data_queue *queue;
 
+	if (vif->type == NL80211_IFTYPE_MESH_POINT) {
+		rt2x00_info(rt2x00dev, "Ignoring TX queue configuration for mesh point. Leaving it to hostapd\n");
+		return 0;
+	}
+
 	queue = rt2x00queue_get_tx_queue(rt2x00dev, queue_idx);
 	if (unlikely(!queue))
 		return -EINVAL;
@@ -702,7 +707,7 @@ int rt2x00mac_conf_tx(struct ieee80211_hw *hw,
 	queue->aifs = params->aifs;
 	queue->txop = params->txop;
 
-	rt2x00_dbg(rt2x00dev,
+	rt2x00_info(rt2x00dev,
 		   "Configured TX queue %d - CWmin: %d, CWmax: %d, Aifs: %d, TXop: %d\n",
 		   queue_idx, queue->cw_min, queue->cw_max, queue->aifs,
 		   queue->txop);
