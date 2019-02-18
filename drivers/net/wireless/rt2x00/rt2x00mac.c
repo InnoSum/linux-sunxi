@@ -475,6 +475,9 @@ int rt2x00mac_set_key(struct ieee80211_hw *hw, enum set_key_cmd cmd,
 	if (!rt2x00_has_cap_hw_crypto(rt2x00dev))
 		return -EOPNOTSUPP;
 
+	if (vif->type == NL80211_IFTYPE_MESH_POINT)
+		return -EOPNOTSUPP;
+
 	/*
 	 * To support IBSS RSN, don't program group keys in IBSS, the
 	 * hardware will then not attempt to decrypt the frames.

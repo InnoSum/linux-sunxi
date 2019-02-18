@@ -54,14 +54,6 @@ void rt2x00lib_config_intf(struct rt2x00_dev *rt2x00dev,
 		break;
 	}
 
-	if(type == NL80211_IFTYPE_MESH_POINT) {
-		rt2x00_info(rt2x00dev, "Disabling hwcrypt");
-		clear_bit(CAPABILITY_HW_CRYPTO, &rt2x00dev->cap_flags);
-	} else {
-		rt2x00_info(rt2x00dev, "Enabling hwcrypt");
-		set_bit(CAPABILITY_HW_CRYPTO, &rt2x00dev->cap_flags);
-	}
-
 	/*
 	 * Note that when NULL is passed as address we will send
 	 * 00:00:00:00:00 to the device to clear the address.
