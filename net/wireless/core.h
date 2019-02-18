@@ -54,7 +54,8 @@ struct cfg80211_registered_device {
 	int opencount; /* also protected by devlist_mtx */
 	wait_queue_head_t dev_wait;
 
-	u32 ap_beacons_nlpid;
+	struct list_head beacon_registrations;
+	spinlock_t beacon_registrations_lock;
 
 	/* BSSes/scanning */
 	spinlock_t bss_lock;
@@ -267,6 +268,10 @@ struct cfg80211_cached_keys {
 	int def, defmgmt;
 };
 
+struct cfg80211_beacon_registration {
+	struct list_head list;
+	u32 nlportid;
+};
 
 /* free object */
 extern void cfg80211_dev_free(struct cfg80211_registered_device *rdev);

@@ -6321,16 +6321,34 @@ static int nl80211_probe_client(struct sk_buff *skb,
 static int nl80211_register_beacons(struct sk_buff *skb, struct genl_info *info)
 {
 	struct cfg80211_registered_device *rdev = info->user_ptr[0];
+	struct cfg80211_beacon_registration *reg, *nreg;
+	int rv;
 
 	if (!(rdev->wiphy.flags & WIPHY_FLAG_REPORTS_OBSS))
 		return -EOPNOTSUPP;
 
-	if (rdev->ap_beacons_nlpid)
-		return -EBUSY;
+	nreg = kzalloc(sizeof(*nreg), GFP_KERNEL);
+	if (!nreg)
+		return -ENOMEM;
 
-	rdev->ap_beacons_nlpid = info->snd_pid;
+	/* First, check if already registered. */
+	spin_lock_bh(&rdev->beacon_registrations_lock);
+	list_for_each_entry(reg, &rdev->beacon_registrations, list) {
+		if (reg->nlportid == info->snd_pid) {
+			rv = -EALREADY;
+			goto out_err;
+		}
+	}
+	/* Add it to the list */
+	nreg->nlportid = info->snd_pid;
+	list_add(&nreg->list, &rdev->beacon_registrations);
+	spin_unlock_bh(&rdev->beacon_registrations_lock);
 
 	return 0;
+out_err:
+	spin_unlock_bh(&rdev->beacon_registrations_lock);
+	kfree(nreg);
+	return rv;
 }
 
 #define NL80211_FLAG_NEED_WIPHY		0x01
@@ -8048,40 +8066,43 @@ EXPORT_SYMBOL(cfg80211_probe_status);
 
 void cfg80211_report_obss_beacon(struct wiphy *wiphy,
 				 const u8 *frame, size_t len,
-				 int freq, int sig_dbm, gfp_t gfp)
+				 int freq, int sig_dbm)
 {
 	struct cfg80211_registered_device *rdev = wiphy_to_dev(wiphy);
 	struct sk_buff *msg;
 	void *hdr;
-	u32 nlpid = ACCESS_ONCE(rdev->ap_beacons_nlpid);
+	struct cfg80211_beacon_registration *reg;
 
-	if (!nlpid)
-		return;
+	spin_lock_bh(&rdev->beacon_registrations_lock);
+	list_for_each_entry(reg, &rdev->beacon_registrations, list) {
+		msg = nlmsg_new(len + 100, GFP_ATOMIC);
+		if (!msg) {
+			spin_unlock_bh(&rdev->beacon_registrations_lock);
+			return;
+		}
 
-	msg = nlmsg_new(len + 100, gfp);
-	if (!msg)
-		return;
+		hdr = nl80211hdr_put(msg, 0, 0, 0, NL80211_CMD_FRAME);
+		if (!hdr)
+			goto nla_put_failure;
 
-	hdr = nl80211hdr_put(msg, 0, 0, 0, NL80211_CMD_FRAME);
-	if (!hdr) {
-		nlmsg_free(msg);
-		return;
+		NLA_PUT_U32(msg, NL80211_ATTR_WIPHY, rdev->wiphy_idx);
+		if (freq)
+			NLA_PUT_U32(msg, NL80211_ATTR_WIPHY_FREQ, freq);
+		if (sig_dbm)
+			NLA_PUT_U32(msg, NL80211_ATTR_RX_SIGNAL_DBM, sig_dbm);
+		NLA_PUT(msg, NL80211_ATTR_FRAME, len, frame);
+
+		genlmsg_end(msg, hdr);
+
+		genlmsg_unicast(wiphy_net(&rdev->wiphy), msg, reg->nlportid);
 	}
-
-	NLA_PUT_U32(msg, NL80211_ATTR_WIPHY, rdev->wiphy_idx);
-	if (freq)
-		NLA_PUT_U32(msg, NL80211_ATTR_WIPHY_FREQ, freq);
-	if (sig_dbm)
-		NLA_PUT_U32(msg, NL80211_ATTR_RX_SIGNAL_DBM, sig_dbm);
-	NLA_PUT(msg, NL80211_ATTR_FRAME, len, frame);
-
-	genlmsg_end(msg, hdr);
-
-	genlmsg_unicast(wiphy_net(&rdev->wiphy), msg, nlpid);
+	spin_unlock_bh(&rdev->beacon_registrations_lock);
 	return;
 
  nla_put_failure:
-	genlmsg_cancel(msg, hdr);
+	spin_unlock_bh(&rdev->beacon_registrations_lock);
+	if (hdr)
+		genlmsg_cancel(msg, hdr);
 	nlmsg_free(msg);
 }
 EXPORT_SYMBOL(cfg80211_report_obss_beacon);
@@ -8093,6 +8114,7 @@ static int nl80211_netlink_notify(struct notifier_block * nb,
 	struct netlink_notify *notify = _notify;
 	struct cfg80211_registered_device *rdev;
 	struct wireless_dev *wdev;
+	struct cfg80211_beacon_registration *reg, *tmp;
 
 	if (state != NETLINK_URELEASE || notify->protocol != NETLINK_GENERIC)
 		return NOTIFY_DONE;
@@ -8102,8 +8124,17 @@ static int nl80211_netlink_notify(struct notifier_block * nb,
 	list_for_each_entry_rcu(rdev, &cfg80211_rdev_list, list) {
 		list_for_each_entry_rcu(wdev, &rdev->netdev_list, list)
 			cfg80211_mlme_unregister_socket(wdev, notify->pid);
-		if (rdev->ap_beacons_nlpid == notify->pid)
-			rdev->ap_beacons_nlpid = 0;
+
+		spin_lock_bh(&rdev->beacon_registrations_lock);
+		list_for_each_entry_safe(reg, tmp, &rdev->beacon_registrations,
+					 list) {
+			if (reg->nlportid == notify->pid) {
+				list_del(&reg->list);
+				kfree(reg);
+				break;
+			}
+		}
+		spin_unlock_bh(&rdev->beacon_registrations_lock);
 	}
 
 	rcu_read_unlock();
