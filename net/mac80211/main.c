@@ -731,6 +731,9 @@ int ieee80211_register_hw(struct ieee80211_hw *hw)
 		if (max_bitrates < sband->n_bitrates)
 			max_bitrates = sband->n_bitrates;
 		supp_ht = supp_ht || sband->ht_cap.ht_supported;
+		if (sband->ht_cap.ht_supported) {
+			sband->ht_cap.cap |= WLAN_HT_CAP_SM_PS_DISABLED << IEEE80211_HT_CAP_SM_PS_SHIFT;
+		}
 	}
 
 	local->int_scan_req = kzalloc(sizeof(*local->int_scan_req) +
